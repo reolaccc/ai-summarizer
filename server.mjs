@@ -22,7 +22,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Create a structured bullet outline that captures the content thoroughly. Do not limit the summary to three bullets. For medium or long inputs, aim for about 5 to 8 top-level ideas, then add 1 to 3 nested child bullets when a point needs support, examples, caveats, or details. Aim for a clear hierarchy, like a simple knowledge map, not a flat list. Keep the wording clean and direct.",
+      "Create a structured note outline that captures the content thoroughly. Do not limit the summary to three bullets. For medium or long inputs, aim for about 4 to 7 top-level sections. Each top-level section must be specific, not generic, and should read like a short claim or takeaway rather than a vague label. Under each top-level section, add 2 to 3 nested bullets that include concrete facts, examples, causes, effects, tradeoffs, or why it matters. The goal is a deeper knowledge map, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
   },
   key_insights: {
     label: "Key Insights",

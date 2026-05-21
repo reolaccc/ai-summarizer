@@ -17,9 +17,9 @@ export const SUMMARY_MODES: SummaryModeConfig[] = [
   {
     id: "standard",
     label: "Standard Summary",
-    description: "Adaptive hierarchical bullets.",
+    description: "Deeper sections with concrete details.",
     outputType: "bullets",
-    estimatedOutputTokens: 480,
+    estimatedOutputTokens: 680,
   },
   {
     id: "key_insights",
