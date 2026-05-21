@@ -246,6 +246,14 @@ function splitBullets(text) {
     .filter(Boolean);
 }
 
+function cleanAssistantText(text) {
+  return String(text ?? "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
 function getBulletStats(items) {
   const normalized = normalizeBulletNodes(items);
 
@@ -639,8 +647,16 @@ app.post("/api/chat", async (req, res) => {
 
     const response = await client.responses.create({
       model: "gpt-5.4-mini",
-      instructions:
-        "You answer questions about the provided source content. Keep the answer short, useful, and in bullet points. If the question is not answerable from the content, say so briefly.",
+      instructions: [
+        "You are a thoughtful follow-up assistant for the provided source content.",
+        "Answer the user's question directly, naturally, and intelligently.",
+        "You may use the source content plus simple reasoning, arithmetic, calendar math, or timezone conversion when the answer can be inferred.",
+        "If the user asks for a conversion or calculation, do the conversion instead of saying the source does not state it.",
+        "If a precise answer cannot be determined, say what is known and what is uncertain.",
+        "Prefer 1 to 3 short paragraphs. Use bullets only if they make the answer clearer.",
+        "Do not use markdown fences.",
+        "Do not wrap the answer in bold or other markdown formatting.",
+      ].join("\n"),
       input: `Source content:\n${sourceContext}\n\nSummary type: ${summaryType}\n\nSummary:\n${
         summaryType === "bullets"
           ? formatBulletNodes(summaryBullets)
@@ -668,8 +684,9 @@ app.post("/api/chat", async (req, res) => {
     return res.json({
       answer:
         answerBullets.length > 0
-          ? answerBullets.join("\n")
-          : response.output_text.trim() || "I could not generate a response for that question, but the source may still contain the answer.",
+          ? answerBullets.map(cleanAssistantText).join("\n")
+          : cleanAssistantText(response.output_text.trim()) ||
+            "I could not generate a response for that question, but the source may still contain the answer.",
       spend: {
         monthKey: updatedLedger.monthKey,
         spentUsd: updatedLedger.spentUsd,
