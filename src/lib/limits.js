@@ -1,2 +1,2 @@
 export const MAX_INPUT_CHARACTERS = 12000;
-export const MAX_INPUT_TOKENS = 3000;
+export const MAX_INPUT_TOKENS = 5000;
