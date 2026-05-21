@@ -277,6 +277,99 @@ function supportsMixedStandardSummary(contextText) {
   return countWords(contextText) >= 180;
 }
 
+function cleanSupportSentence(sentence) {
+  return String(sentence ?? "")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s-–—:]+/, "")
+    .replace(/^[A-Z][a-z]+,\s*/, "")
+    .replace(/\s+\((?:[^()]|\([^()]*\))*\)\s*$/, "")
+    .replace(/[.!?。！？]+$/, "")
+    .trim();
+}
+
+function splitSupportClauses(paragraph) {
+  const normalized = String(paragraph ?? "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return [];
+  }
+
+  const byPunctuation = normalized
+    .split(/(?<=[,;:])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (byPunctuation.length >= 2) {
+    return byPunctuation.slice(1).map(cleanSupportSentence).filter(Boolean);
+  }
+
+  const byConjunction = normalized
+    .split(/\s+\b(?:and|but|while|because|since|so|also)\b\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (byConjunction.length >= 2) {
+    return byConjunction.slice(1).map(cleanSupportSentence).filter(Boolean);
+  }
+
+  return [];
+}
+
+function enforceMixedStandardSummary(summaryText, contextText) {
+  const original = String(summaryText ?? "").trim();
+  if (!original || countBulletLines(original) > 0 || !supportsMixedStandardSummary(contextText)) {
+    return original;
+  }
+
+  const paragraphs = splitParagraphs(original);
+  if (paragraphs.length === 0) {
+    return original;
+  }
+
+  const mixedBlocks = [];
+  let generatedBulletCount = 0;
+
+  for (const paragraph of paragraphs) {
+    const sentences = splitSentences(paragraph).map((sentence) => sentence.trim()).filter(Boolean);
+
+    if (sentences.length <= 1) {
+      mixedBlocks.push(paragraph.trim());
+      continue;
+    }
+
+    const leadSentence = sentences[0];
+    const supportSentences = sentences.slice(1).map(cleanSupportSentence).filter(Boolean).slice(0, 3);
+    const supportClauses = supportSentences.length > 0 ? supportSentences : splitSupportClauses(paragraph).slice(0, 3);
+
+    const groupLines = [leadSentence];
+    if (supportClauses.length > 0) {
+      supportClauses.forEach((item) => groupLines.push(`- ${item}`));
+      generatedBulletCount += supportClauses.length;
+    }
+
+    mixedBlocks.push(groupLines.join("\n"));
+  }
+
+  if (generatedBulletCount === 0) {
+    const fallbackParagraph = paragraphs
+      .slice()
+      .sort((a, b) => b.length - a.length)[0];
+    const fallbackClauses = splitSupportClauses(fallbackParagraph).slice(0, 3);
+
+    if (fallbackClauses.length > 0) {
+      const fallbackLines = [splitSentences(fallbackParagraph)[0] || fallbackParagraph.trim()];
+      fallbackClauses.forEach((item) => fallbackLines.push(`- ${item}`));
+
+      mixedBlocks.length = 0;
+      mixedBlocks.push(fallbackLines.join("\n"));
+      for (const paragraph of paragraphs.slice(1)) {
+        mixedBlocks.push(paragraph.trim());
+      }
+    }
+  }
+
+  return mixedBlocks.filter(Boolean).join("\n\n");
+}
+
 function hasParagraphContent(text) {
   return String(text ?? "")
     .split(/\n\s*\n+/)
@@ -718,6 +811,7 @@ app.post("/api/summarize", async (req, res) => {
       ? createMockSummaryResponse({ summaryMode, contextText, sourceLabel })
       : await client.responses.create({
           model: "gpt-5.4-mini",
+          temperature: 0,
           instructions: [
             "You are a helpful summarizer.",
             `Mode: ${modeConfig.label}.`,
@@ -743,6 +837,7 @@ app.post("/api/summarize", async (req, res) => {
       if (!useMockResponses && eli10ParagraphCount < 3) {
         const rewriteResponse = await client.responses.create({
           model: "gpt-5.4-mini",
+          temperature: 0,
           instructions: [
             "You are rewriting an ELI10 explanation so it becomes exactly 3 short paragraphs.",
             "Paragraph 1 should explain what it is.",
@@ -763,11 +858,11 @@ app.post("/api/summarize", async (req, res) => {
           ].join("\n"),
         });
 
-        const rewrittenParsed = parseStructuredResponse(rewriteResponse.output_text);
-        parsed = {
-          ...parsed,
-          summaryText: rewrittenParsed.summaryText || parsed.summaryText,
-        };
+      const rewrittenParsed = parseStructuredResponse(rewriteResponse.output_text);
+      parsed = {
+        ...parsed,
+        summaryText: rewrittenParsed.summaryText || parsed.summaryText,
+      };
 
         const rewriteUsage = extractUsageTokens(rewriteResponse.usage);
         extraCost +=
@@ -785,6 +880,7 @@ app.post("/api/summarize", async (req, res) => {
     if (!useMockResponses && summaryMode === "standard" && (isTooThinStandardSummary(parsed) || lacksMixedStructure(parsed, contextText))) {
       const expansionResponse = await client.responses.create({
         model: "gpt-5.4-mini",
+        temperature: 0,
         instructions: [
           "You are rewriting a standard summary so it follows a mixed structure more faithfully.",
           "Rewrite it into a richer paragraph-based summary with more concrete information.",
@@ -818,6 +914,13 @@ app.post("/api/summarize", async (req, res) => {
         expansionUsage.inputTokens > 0 || expansionUsage.outputTokens > 0
           ? estimateCostUsd(expansionUsage.inputTokens, expansionUsage.outputTokens)
           : 0;
+    }
+
+    if (summaryMode === "standard") {
+      parsed = {
+        ...parsed,
+        summaryText: enforceMixedStandardSummary(parsed.summaryText, contextText),
+      };
     }
     const { inputTokens, outputTokens } = extractUsageTokens(response.usage);
     const actualCost =
