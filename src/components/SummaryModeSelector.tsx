@@ -7,7 +7,7 @@ type Props = {
 
 export function SummaryModeSelector({ value, onChange }: Props) {
   return (
-    <div className="grid gap-2 sm:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-3">
       {SUMMARY_MODES.map((mode) => {
         const active = mode.id === value;
 
@@ -16,13 +16,13 @@ export function SummaryModeSelector({ value, onChange }: Props) {
             key={mode.id}
             type="button"
             onClick={() => onChange(mode.id)}
-            className={`rounded-2xl border px-4 py-3 text-left transition ${
+            className={`rounded-2xl border px-5 py-5 text-left transition ${
               active
                 ? "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-50 shadow-sm"
                 : "border-fuchsia-400/10 bg-[#240d1f] text-fuchsia-50/90 hover:border-fuchsia-300/20 hover:bg-fuchsia-500/10"
             }`}
           >
-            <div className="text-sm font-semibold text-fuchsia-50">{mode.label}</div>
+            <div className="text-base font-semibold text-fuchsia-50">{mode.label}</div>
           </button>
         );
       })}
