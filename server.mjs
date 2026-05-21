@@ -22,7 +22,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Create a structured note outline that captures the content thoroughly. Do not limit the summary to three bullets. Aim for 3 to 5 major sections, with the exact number depending on the source length and complexity. Under each major section, add 5 to 10 detailed bullets when the content supports it. Each detail should try to include a concrete example, effect, cause, implication, or reason why it matters. The goal is a dense knowledge map, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
+      "Create a structured note outline that captures the content thoroughly. Do not limit the summary to three bullets. Aim for 3 to 5 major sections, with the exact number depending on the source length and complexity. Under each major section, add 5 to 10 detailed bullets when the content supports it. Each detail should try to include a concrete example, effect, cause, implication, or reason why it matters. If the source is about a specific event, mission, or product, keep that exact name front and center and do not replace it with a generic company description. The goal is a dense knowledge map, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
   },
   key_insights: {
     label: "Key Insights",
@@ -87,6 +87,90 @@ function extractReadableText(html) {
   const text = [primaryText, secondaryText, metaText].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
   return { title, text };
+}
+
+function getSpaceXMissionSlug(targetUrl) {
+  if (targetUrl.hostname !== "www.spacex.com" && targetUrl.hostname !== "spacex.com") {
+    return null;
+  }
+
+  const match = targetUrl.pathname.match(/^\/launches\/([^/?#]+)/i);
+  if (!match) {
+    return null;
+  }
+
+  return match[1];
+}
+
+function extractSpaceXMissionText(mission) {
+  const compact = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+  const textFromHtml = (value) => {
+    const fragment = cheerio.load(`<div>${String(value ?? "")}</div>`);
+    return fragment("div").text().replace(/\s+/g, " ").trim();
+  };
+  const lines = [];
+
+  if (mission?.title) {
+    lines.push(`Mission title: ${compact(mission.title)}`);
+  }
+
+  if (mission?.missionId) {
+    lines.push(`Mission id: ${compact(mission.missionId)}`);
+  }
+
+  if (mission?.callToAction) {
+    lines.push(`Call to action: ${compact(mission.callToAction)}`);
+  }
+
+  const paragraphs = Array.isArray(mission?.paragraphs)
+    ? mission.paragraphs.map((item) => textFromHtml(item?.content)).filter(Boolean)
+    : [];
+
+  if (paragraphs.length > 0) {
+    lines.push("");
+    lines.push("Overview:");
+    paragraphs.forEach((paragraph) => lines.push(`- ${paragraph}`));
+  }
+
+  const formatTimeline = (label, timeline) => {
+    const entries = Array.isArray(timeline?.timelineEntries)
+      ? timeline.timelineEntries
+          .map((entry) => {
+            const time = compact(entry?.time);
+            const description = compact(entry?.description);
+            return time && description ? `${time} ${description}` : description || time;
+          })
+          .filter(Boolean)
+      : [];
+
+    if (entries.length === 0) {
+      return;
+    }
+
+    lines.push("");
+    lines.push(`${label}:`);
+    entries.forEach((entry) => lines.push(`- ${entry}`));
+  };
+
+  formatTimeline("Pre-launch timeline", mission?.preLaunchTimeline);
+  formatTimeline("Post-launch timeline", mission?.postLaunchTimeline);
+
+  if (Array.isArray(mission?.webcasts) && mission.webcasts.length > 0) {
+    const webcastTitles = mission.webcasts
+      .map((item) => compact(item?.title || item?.videoId || item?.streamingVideoType))
+      .filter(Boolean);
+
+    if (webcastTitles.length > 0) {
+      lines.push("");
+      lines.push("Webcasts:");
+      webcastTitles.forEach((item) => lines.push(`- ${item}`));
+    }
+  }
+
+  return {
+    title: compact(mission?.title) || "SpaceX mission",
+    text: lines.join("\n").trim(),
+  };
 }
 
 function getMonthKey(date = new Date()) {
@@ -280,33 +364,60 @@ app.post("/api/summarize", async (req, res) => {
         });
       }
 
-      const pageResponse = await fetch(targetUrl.toString(), {
-        redirect: "follow",
-        headers: {
-          "user-agent": "AI Summarizer/1.0",
-          accept: "text/html,application/xhtml+xml",
-        },
-      });
+      const missionSlug = getSpaceXMissionSlug(targetUrl);
 
-      if (!pageResponse.ok) {
-        return res.status(502).json({
-          error: `Failed to fetch the page. HTTP ${pageResponse.status}.`,
-        });
+      if (missionSlug) {
+        const missionResponse = await fetch(
+          `https://content.spacex.com/api/spacex-website/missions/${missionSlug}`,
+          {
+            headers: {
+              accept: "application/json",
+              "user-agent": "AI Summarizer/1.0",
+            },
+          },
+        );
+
+        if (missionResponse.ok) {
+          const mission = await missionResponse.json();
+          const { title, text } = extractSpaceXMissionText(mission);
+          const trimmedText = text.slice(0, 12000);
+
+          if (trimmedText) {
+            contextText = trimmedText;
+            sourceLabel = title;
+          }
+        }
       }
 
-      const html = await pageResponse.text();
-      const { title, text } = extractReadableText(html);
-      const trimmedText = text.slice(0, 12000);
-
-      if (!trimmedText) {
-        return res.status(400).json({
-          error:
-            "No readable text was found on that page. The site may be JavaScript-rendered, image-based, or blocked for server-side fetches.",
+      if (sourceLabel === "Pasted text") {
+        const pageResponse = await fetch(targetUrl.toString(), {
+          redirect: "follow",
+          headers: {
+            "user-agent": "AI Summarizer/1.0",
+            accept: "text/html,application/xhtml+xml",
+          },
         });
-      }
 
-      contextText = trimmedText;
-      sourceLabel = title;
+        if (!pageResponse.ok) {
+          return res.status(502).json({
+            error: `Failed to fetch the page. HTTP ${pageResponse.status}.`,
+          });
+        }
+
+        const html = await pageResponse.text();
+        const { title, text } = extractReadableText(html);
+        const trimmedText = text.slice(0, 12000);
+
+        if (!trimmedText) {
+          return res.status(400).json({
+            error:
+              "No readable text was found on that page. The site may be JavaScript-rendered, image-based, or blocked for server-side fetches.",
+          });
+        }
+
+        contextText = trimmedText;
+        sourceLabel = title;
+      }
     }
 
     const estimatedInputTokens = estimateTokens(
