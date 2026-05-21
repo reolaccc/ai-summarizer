@@ -35,7 +35,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Explain Like I'm 10",
     summaryType: "paragraph",
     instructions:
-      "Explain the content in very simple language, as if speaking to a curious 10-year-old. Do not just simplify the wording; make the idea concrete, friendly, and easy to picture. Use at least 3 short paragraphs: first explain the main idea, then give a concrete everyday example or analogy, then explain why it matters. Keep the tone warm, encouraging, and a little conversational. Avoid jargon. If you mention a technical term, explain it right away in simple words.",
+      "Explain the content in very simple language, as if speaking to a curious 10-year-old. Do not just simplify the wording; make the idea concrete, friendly, and easy to picture. Use exactly 3 short paragraphs and separate them with a blank line. Paragraph 1 should explain what it is. Paragraph 2 should give one concrete everyday example or analogy. Paragraph 3 should explain why it matters. Keep the tone warm, encouraging, and a little conversational. Avoid jargon. If you mention a technical term, explain it right away in simple words.",
   },
 };
 
@@ -305,7 +305,7 @@ function createMockSummaryResponse({ summaryMode, contextText, sourceLabel }) {
           "Think of this page like a friendly school announcement for a very big science experiment.",
           "It tells people when the test starts, what the team wants to learn, and which parts they will watch carefully.",
           "For Starship Flight 12, SpaceX is trying a new rocket system and checking whether the pieces work together safely, a bit like making sure every part of a giant toy set fits before you play with it.",
-        ].join(" "),
+        ].join("\n\n"),
       summaryBullets: [],
       insightPairs: [],
       questions: [

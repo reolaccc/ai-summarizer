@@ -79,7 +79,7 @@ export function SummaryCard({
             ))}
           </div>
         ) : hasSummaryContent ? (
-          <p className="text-sm leading-7 text-fuchsia-50/90 md:text-base">
+          <p className="whitespace-pre-line text-sm leading-7 text-fuchsia-50/90 md:text-base">
             {summaryText}
           </p>
         ) : (
