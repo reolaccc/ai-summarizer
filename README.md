@@ -1,6 +1,16 @@
 # AI Summarizer
 
-A very small MVP web app built with React, Vite, TypeScript, Tailwind CSS, and the OpenAI API.
+A small React + Vite + TypeScript demo for summarizing text, URLs, and PDF files with OpenAI.
+
+## Features
+
+- Text or URL input
+- Summary modes: Standard Summary, Bullet Points, Key Insights, Academic, Explain Like I'm 10
+- PDF upload with drag-and-drop
+- Follow-up questions generated from the content
+- Token and cost estimator before sending requests
+- Copy summary, export Markdown, export plain text
+- Small monthly spend guard in the backend
 
 ## Setup
 
@@ -16,48 +26,107 @@ npm install
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-3. Start the development server:
+3. Start the app locally:
 
 ```bash
 npm run dev
 ```
 
+4. Open the local URL shown in the terminal, usually:
+
+```text
+http://localhost:5173
+```
+
 ## Deploy to Render
 
-1. Push this folder to GitHub.
-2. In Render, create a new Web Service from that repository.
-3. Use the included `render.yaml` Blueprint, or set these values manually:
+1. Push this repo to GitHub.
+2. In Render, create a new Web Service from the repository.
+3. Use the included `render.yaml` or set these values manually:
    - Build command: `npm install && npm run build`
    - Start command: `npm start`
    - Environment variable: `OPENAI_API_KEY`
-4. Render will prompt you for the API key during setup if you use the Blueprint.
+4. Render will give you a public `onrender.com` URL after deployment.
 
-## Notes
+## Render Check
 
-- This project is intentionally simple: one page, a Text/URL switcher, one summary output, and a follow-up chat box.
-- The app reads `OPENAI_API_KEY` from the local Node server, not from the browser.
-- The browser sends either text or a page URL to `/api/summarize`, and the server summarizes that content.
-- If you use a URL, the server fetches only that page, extracts readable text, and does not crawl lower-level links.
+- `render.yaml` already defines the web service and free plan.
+- `OPENAI_API_KEY` is configured as a Render environment variable, not in the frontend.
+- After deployment, the public URL comes from Render automatically; there is no custom domain setup required for the demo.
+- If Render shows a dashboard, the important things to verify are the service status, the env var, and the latest deploy log.
 
-## Project structure
+## Project Structure
 
 ```text
 .
-├── .env.example
+├── README.md
 ├── index.html
 ├── package.json
-├── README.md
+├── render.yaml
+├── server.mjs
 ├── src
 │   ├── App.tsx
-│   ├── index.css
-│   ├── main.tsx
-│   └── vite-env.d.ts
-├── server.mjs
+│   ├── components
+│   │   ├── EstimatorCard.tsx
+│   │   ├── FileDropzone.tsx
+│   │   ├── ResultCards.tsx
+│   │   └── SummaryModeSelector.tsx
+│   └── lib
+│       ├── estimate.ts
+│       ├── export.ts
+│       ├── pdf.ts
+│       └── summaryModes.ts
 ├── tsconfig.app.json
 ├── tsconfig.json
 └── vite.config.ts
 ```
 
-## Where to modify the summarization prompt
+## How PDF Extraction Works
 
-Open `server.mjs` and update the `instructions` value inside the OpenAI request.
+PDF uploads are handled in the browser with `pdfjs-dist`. The app:
+
+- Reads the uploaded PDF as bytes
+- Loads it with PDF.js
+- Iterates through each page
+- Extracts text content from every page
+- Joins the text and fills the input automatically
+
+The PDF code is lazy-loaded, so the parser only downloads when someone uploads a PDF.
+
+## How Prompts Are Organized
+
+- Summary mode labels and descriptions live in `src/lib/summaryModes.ts`
+- Summary prompt behavior is centralized in `server.mjs`
+- The backend returns structured JSON with:
+  - `summaryType`
+  - `summaryText`
+  - `summaryBullets`
+  - `questions`
+
+If you want to change the actual wording for any mode, edit the summary mode prompt block in `server.mjs`.
+
+## Token Estimation
+
+The estimator is intentionally lightweight and approximate:
+
+- Input tokens are estimated from text length using about 4 characters per token
+- Output tokens are estimated from the selected summary mode
+- Estimated cost uses the current per-token pricing constants in `src/lib/estimate.ts`
+
+This is meant for rough visibility before the request is sent, not billing-grade precision.
+
+## Customizing Summary Modes
+
+To change the UI labels, descriptions, or token estimates, edit:
+
+- `src/lib/summaryModes.ts`
+
+To change how the AI writes each mode, edit:
+
+- `server.mjs`
+
+## Notes
+
+- The OpenAI API key stays on the server and is not exposed to the browser.
+- The backend includes a small spend guard that stops new requests when the demo reaches about `$7` in estimated monthly spend.
+- The app preserves the existing chat-style follow-up flow.

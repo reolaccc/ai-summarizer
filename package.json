@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0 <25.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "NODE_ENV=development node server.mjs",
@@ -17,6 +17,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "openai": "^5.1.0",
+    "pdfjs-dist": "^5.7.284",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
