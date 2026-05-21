@@ -17,9 +17,9 @@ export const SUMMARY_MODES: SummaryModeConfig[] = [
   {
     id: "standard",
     label: "Standard Summary",
-    description: "Concise, clean bullet points.",
+    description: "Complete, clean bullet points.",
     outputType: "bullets",
-    estimatedOutputTokens: 160,
+    estimatedOutputTokens: 220,
   },
   {
     id: "key_insights",
@@ -31,9 +31,9 @@ export const SUMMARY_MODES: SummaryModeConfig[] = [
   {
     id: "eli10",
     label: "Explain Like I'm 10",
-    description: "Simple, friendly educational tone.",
+    description: "Simple, friendly, with examples.",
     outputType: "paragraph",
-    estimatedOutputTokens: 170,
+    estimatedOutputTokens: 220,
   },
 ];
 

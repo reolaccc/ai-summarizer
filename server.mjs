@@ -22,7 +22,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Write 4 to 6 concise bullet points that capture the most important facts, ideas, and outcomes. Keep the wording clean and direct.",
+      "Write 6 to 8 concise bullet points that capture the most important facts, ideas, and outcomes. Keep the wording clean and direct, but include enough detail that the summary feels complete rather than abbreviated.",
   },
   key_insights: {
     label: "Key Insights",
@@ -34,7 +34,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Explain Like I'm 10",
     summaryType: "paragraph",
     instructions:
-      "Explain the content in very simple language, as if speaking to a 10-year-old. Use plain words and gentle examples.",
+      "Explain the content in very simple language, as if speaking to a 10-year-old. Use plain words, gentle examples, and one simple analogy if it helps. Aim for 2 short paragraphs so the explanation feels friendly, clear, and not too brief.",
   },
 };
 
