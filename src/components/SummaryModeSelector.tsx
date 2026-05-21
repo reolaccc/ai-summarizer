@@ -16,8 +16,10 @@ export function SummaryModeSelector({ value, onChange }: Props) {
             key={mode.id}
             type="button"
             onClick={() => onChange(mode.id)}
-            className={`crystal-option rounded-2xl px-5 py-5 text-left transition ${
-              active ? "crystal-option-active text-fuchsia-50" : "text-fuchsia-50/90 hover:opacity-95"
+            className={`rounded-2xl border px-5 py-5 text-left transition ${
+              active
+                ? "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-50 shadow-sm"
+                : "border-fuchsia-400/10 bg-[#240d1f] text-fuchsia-50/90 hover:border-fuchsia-300/20 hover:bg-fuchsia-500/10"
             }`}
           >
             <div className="text-base font-semibold text-fuchsia-50">{mode.label}</div>
@@ -32,7 +34,7 @@ export function SelectedModeChip({ value }: { value: SummaryModeId }) {
   const mode = getSummaryMode(value);
 
   return (
-    <span className="crystal-chip inline-flex rounded-full px-3 py-1 text-xs font-medium text-fuchsia-50">
+    <span className="inline-flex rounded-full border border-fuchsia-300/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-50">
       {mode.label}
     </span>
   );

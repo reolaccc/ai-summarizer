@@ -14,8 +14,8 @@ export function FileDropzone({ onPdfFileSelected, isProcessing, fileName }: Prop
     <div
       role="button"
       tabIndex={0}
-      className={`crystal-dashed rounded-3xl p-4 transition focus:outline-none ${
-        isDragActive ? "ring-4 ring-fuchsia-400/20" : ""
+      className={`rounded-3xl border border-dashed p-4 transition focus:outline-none ${
+        isDragActive ? "border-fuchsia-300/30 bg-fuchsia-500/10" : "border-fuchsia-400/10 bg-[#240d1f]"
       }`}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(event) => {
