@@ -23,7 +23,6 @@ export function SummaryModeSelector({ value, onChange }: Props) {
             }`}
           >
             <div className="text-sm font-semibold text-fuchsia-50">{mode.label}</div>
-            <div className="mt-1 text-xs leading-5 text-fuchsia-100/60">{mode.description}</div>
           </button>
         );
       })}
