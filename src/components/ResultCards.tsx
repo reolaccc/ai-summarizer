@@ -114,23 +114,52 @@ function StructuredParagraphSummary({ text }: { text: string }) {
 }
 
 function splitStructuredBlocks(text: string) {
-  return String(text ?? "")
-    .split(/\n\s*\n+/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      const bulletItems = lines
-        .filter((line) => /^[-*•]\s+/.test(line))
-        .map((line) => line.replace(/^[-*•]\s+/, "").trim())
-        .filter(Boolean);
+  const lines = String(text ?? "").split("\n");
+  const blocks: Array<
+    | { type: "paragraph"; text: string }
+    | { type: "bullets"; items: string[] }
+  > = [];
+  let paragraphLines: string[] = [];
+  let bulletItems: string[] = [];
 
-      if (lines.length > 0 && bulletItems.length === lines.length) {
-        return { type: "bullets" as const, items: bulletItems };
-      }
+  const flushParagraph = () => {
+    const textBlock = paragraphLines.join("\n").trim();
+    if (textBlock) {
+      blocks.push({ type: "paragraph", text: textBlock });
+    }
+    paragraphLines = [];
+  };
 
-      return { type: "paragraph" as const, text: block };
-    });
+  const flushBullets = () => {
+    if (bulletItems.length > 0) {
+      blocks.push({ type: "bullets", items: bulletItems });
+    }
+    bulletItems = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      flushBullets();
+      continue;
+    }
+
+    if (/^[-*•]\s+/.test(line)) {
+      flushParagraph();
+      bulletItems.push(line.replace(/^[-*•]\s+/, "").trim());
+      continue;
+    }
+
+    flushBullets();
+    paragraphLines.push(line);
+  }
+
+  flushParagraph();
+  flushBullets();
+
+  return blocks;
 }
 
 function BulletTreeItem({ node }: { node: ReturnType<typeof buildBulletTree>[number] }) {

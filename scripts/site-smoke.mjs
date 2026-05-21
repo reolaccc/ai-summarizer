@@ -80,6 +80,7 @@ async function run() {
     const summaryText = summary.summaryText;
     assert.match(summaryText, /Flight 12|Twelfth Flight Test|Starship/i, "summary should mention Flight 12");
     assert.ok(summaryText.split(/\n\s*\n+/).length >= 2, "summary should contain multiple paragraph blocks");
+    assert.match(summaryText, /(^|\n)-\s+/m, "standard summary should include supporting bullets for rich sources");
 
     const chatResponse = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",

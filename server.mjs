@@ -23,7 +23,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "paragraph",
     instructions:
-      "Create a paragraph-first summary that adapts to the source instead of forcing a list. Write 2 to 5 clear paragraphs, depending on how much material matters. Each paragraph should cover one meaningful idea or theme and should read like natural prose, not note fragments. If a paragraph genuinely needs supporting details, examples, consequences, or caveats, you may add a short bullet block directly after that paragraph using plain '- ' bullets. Do not turn the whole response into bullets. If the source is simple, use paragraphs only. Keep important names, events, missions, and products exact instead of replacing them with generic descriptions. The goal is a readable summary with optional local structure inside a paragraph section, not a flat bullet list and not a vague paraphrase.",
+      "Create a mixed-format summary that is paragraph-first, not list-first. Write as many paragraphs as the source needs, with each paragraph covering one meaningful idea or theme in natural prose. After a paragraph, add a short block of plain '- ' bullets whenever the source provides concrete supporting details such as examples, evidence, steps, implications, dates, metrics, or caveats for that paragraph. For substantial or information-dense sources, at least one paragraph should be followed by supporting bullets. Do not turn the whole response into bullets, and do not put bullets before the paragraph they support. If the source is simple, a paragraph may stand alone without bullets. Keep important names, events, missions, and products exact instead of replacing them with generic descriptions. The goal is a readable mixed summary: paragraphs first, then local child bullets where they help.",
   },
   key_insights: {
     label: "Key Insights",
@@ -273,6 +273,10 @@ function countBulletLines(text) {
     .filter((line) => /^[-*•]\s+/.test(line)).length;
 }
 
+function supportsMixedStandardSummary(contextText) {
+  return countWords(contextText) >= 180;
+}
+
 function hasParagraphContent(text) {
   return String(text ?? "")
     .split(/\n\s*\n+/)
@@ -507,6 +511,18 @@ function isTooThinStandardSummary(summary) {
   const bulletLineCount = countBulletLines(summary.summaryText);
 
   return !hasParagraphContent(summary.summaryText) || paragraphCount < 2 || wordCount < 90 || bulletLineCount > 8;
+}
+
+function lacksMixedStructure(summary, contextText) {
+  if (summary?.summaryType !== "paragraph") {
+    return true;
+  }
+
+  if (!supportsMixedStandardSummary(contextText)) {
+    return false;
+  }
+
+  return countBulletLines(summary.summaryText) === 0;
 }
 
 function buildInputLimitMessage() {
@@ -766,16 +782,17 @@ app.post("/api/summarize", async (req, res) => {
       };
     }
 
-    if (!useMockResponses && summaryMode === "standard" && isTooThinStandardSummary(parsed)) {
+    if (!useMockResponses && summaryMode === "standard" && (isTooThinStandardSummary(parsed) || lacksMixedStructure(parsed, contextText))) {
       const expansionResponse = await client.responses.create({
         model: "gpt-5.4-mini",
         instructions: [
-          "You are expanding a standard summary that is too short.",
+          "You are rewriting a standard summary so it follows a mixed structure more faithfully.",
           "Rewrite it into a richer paragraph-based summary with more concrete information.",
-          "Write 2 to 5 real paragraphs based on the source.",
+          "Write as many real paragraphs as the source needs.",
           "Each paragraph should cover one meaningful idea in natural prose.",
-          "You may add a short '- ' bullet block only when a paragraph truly benefits from supporting details, examples, or implications.",
-          "Do not turn the whole output into bullets.",
+          "For any paragraph with concrete supporting details, add a short '- ' bullet block immediately after that paragraph.",
+          "For substantial or information-dense content, include supporting bullets after at least one paragraph.",
+          "Do not turn the whole output into bullets, and do not place bullets before the paragraph they support.",
           "Return valid JSON only with the same shape as before.",
           '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
           "Keep summaryType as paragraph and keep summaryBullets empty.",
