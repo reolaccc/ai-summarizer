@@ -259,7 +259,7 @@ export default function App() {
               AI Summarizer
             </h1>
             <p className="mt-3 text-lg font-medium leading-7 text-fuchsia-100/80 sm:text-xl">
-              Turn long content into clear summaries, fast.
+              Understand long content and uncover deep insights in minutes.
             </p>
           </div>
         </header>
