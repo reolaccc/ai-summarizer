@@ -274,17 +274,52 @@ function countBulletLines(text) {
 }
 
 function supportsMixedStandardSummary(contextText) {
-  return countWords(contextText) >= 180;
+  return countWords(contextText) >= 120;
 }
 
 function cleanSupportSentence(sentence) {
   return String(sentence ?? "")
     .replace(/\s+/g, " ")
     .replace(/^[\s-–—:]+/, "")
+    .replace(/^[“"']+/, "")
+    .replace(/[”"']+$/, "")
     .replace(/^[A-Z][a-z]+,\s*/, "")
     .replace(/\s+\((?:[^()]|\([^()]*\))*\)\s*$/, "")
     .replace(/[.!?。！？]+$/, "")
     .trim();
+}
+
+function protectSentenceMarkers(text) {
+  const replacements = new Map([
+    ["p.m.", "__PM__"],
+    ["a.m.", "__AM__"],
+    ["U.S.", "__US__"],
+    ["D.C.", "__DC__"],
+    ["M.D.", "__MD__"],
+    ["Ph.D.", "__PHD__"],
+    ["e.g.", "__EG__"],
+    ["i.e.", "__IE__"],
+  ]);
+
+  let protectedText = String(text ?? "");
+
+  for (const [source, token] of replacements) {
+    protectedText = protectedText.replaceAll(source, token);
+  }
+
+  return protectedText;
+}
+
+function restoreSentenceMarkers(text) {
+  return String(text ?? "")
+    .replaceAll("__PM__", "p.m.")
+    .replaceAll("__AM__", "a.m.")
+    .replaceAll("__US__", "U.S.")
+    .replaceAll("__DC__", "D.C.")
+    .replaceAll("__MD__", "M.D.")
+    .replaceAll("__PHD__", "Ph.D.")
+    .replaceAll("__EG__", "e.g.")
+    .replaceAll("__IE__", "i.e.");
 }
 
 function splitSupportClauses(paragraph) {
@@ -299,7 +334,10 @@ function splitSupportClauses(paragraph) {
     .filter(Boolean);
 
   if (byPunctuation.length >= 2) {
-    return byPunctuation.slice(1).map(cleanSupportSentence).filter(Boolean);
+    return byPunctuation
+      .slice(1)
+      .map(cleanSupportSentence)
+      .filter((clause) => Boolean(clause) && countWords(clause) >= 6);
   }
 
   const byConjunction = normalized
@@ -308,7 +346,10 @@ function splitSupportClauses(paragraph) {
     .filter(Boolean);
 
   if (byConjunction.length >= 2) {
-    return byConjunction.slice(1).map(cleanSupportSentence).filter(Boolean);
+    return byConjunction
+      .slice(1)
+      .map(cleanSupportSentence)
+      .filter((clause) => Boolean(clause) && countWords(clause) >= 6);
   }
 
   return [];
@@ -316,12 +357,16 @@ function splitSupportClauses(paragraph) {
 
 function enforceMixedStandardSummary(summaryText, contextText) {
   const original = String(summaryText ?? "").trim();
-  if (!original || countBulletLines(original) > 0 || !supportsMixedStandardSummary(contextText)) {
+  if (!original || countBulletLines(original) > 0) {
     return original;
   }
 
   const paragraphs = splitParagraphs(original);
   if (paragraphs.length === 0) {
+    return original;
+  }
+
+  if (!supportsMixedStandardSummary(contextText) && splitSentences(original).length < 2) {
     return original;
   }
 
@@ -384,9 +429,13 @@ function splitSentences(text) {
     return [];
   }
 
-  const matches = cleaned.match(/[^.!?。！？]+[.!?。！？]*/g);
+  const protectedText = protectSentenceMarkers(cleaned);
+  const matches = protectedText.match(/[^.!?。！？]+[.!?。！？]*/g);
 
-  return (matches ?? [cleaned]).map((sentence) => sentence.trim()).filter(Boolean);
+  return (matches ?? [protectedText])
+    .map((sentence) => restoreSentenceMarkers(sentence.trim()))
+    .map((sentence) => sentence.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
 }
 
 function splitWordsIntoThree(text) {
