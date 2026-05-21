@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-summarizer
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
