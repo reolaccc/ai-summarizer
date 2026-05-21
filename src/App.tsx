@@ -54,6 +54,16 @@ export default function App() {
   const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "");
   const isInputTooLarge = inputValue.trim().length > MAX_INPUT_CHARACTERS;
 
+  function clearCurrentInput() {
+    setInputValue("");
+    setPdfFileName(null);
+    setSummary(null);
+    setChatInput("");
+    setChatMessages([]);
+    setError(null);
+    fileInputRef.current && (fileInputRef.current.value = "");
+  }
+
   async function handlePdfFileSelected(file: File) {
     setError(null);
 
@@ -319,13 +329,22 @@ export default function App() {
                     </span>
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={openPdfPicker}
-                  className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:bg-fuchsia-500/20"
-                >
-                  Upload PDF
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={openPdfPicker}
+                    className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:bg-fuchsia-500/20"
+                  >
+                    Upload PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearCurrentInput}
+                    className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:bg-fuchsia-500/20"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
 
               <textarea
@@ -436,21 +455,28 @@ export default function App() {
 
           <div className="mt-4 space-y-3">
             {chatMessages.length > 0 ? (
-              chatMessages.map((message, index) => (
-                <div
-                  key={`${message.role}-${index}`}
-                  className={`rounded-2xl border px-4 py-3 text-sm leading-7 ${
-                    message.role === "user"
-                      ? "border-fuchsia-300/20 bg-fuchsia-500/10 text-fuchsia-50"
-                      : "border-fuchsia-400/15 bg-[#1b0917] text-fuchsia-50"
-                  }`}
-                >
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    {message.role === "user" ? "You" : "AI"}
+              groupChatMessages(chatMessages)
+                .reverse()
+                .map((turn, turnIndex) => (
+                  <div key={`turn-${turnIndex}`} className="space-y-3">
+                    {turn.user ? (
+                      <div className="rounded-2xl border border-fuchsia-300/20 bg-fuchsia-500/10 px-4 py-3 text-sm leading-7 text-fuchsia-50">
+                        <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          You
+                        </div>
+                        {turn.user.content}
+                      </div>
+                    ) : null}
+                    {turn.assistant ? (
+                      <div className="rounded-2xl border border-fuchsia-400/15 bg-[#1b0917] px-4 py-3 text-sm leading-7 text-fuchsia-50">
+                        <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          AI
+                        </div>
+                        {turn.assistant.content}
+                      </div>
+                    ) : null}
                   </div>
-                  {message.content}
-                </div>
-              ))
+                ))
             ) : (
               <div className="min-h-10" />
             )}
@@ -459,4 +485,16 @@ export default function App() {
       </div>
     </main>
   );
+}
+
+function groupChatMessages(messages: ChatMessage[]) {
+  const turns: Array<{ user?: ChatMessage; assistant?: ChatMessage }> = [];
+
+  for (let index = 0; index < messages.length; index += 2) {
+    const user = messages[index]?.role === "user" ? messages[index] : undefined;
+    const assistant = messages[index + 1]?.role === "assistant" ? messages[index + 1] : undefined;
+    turns.push({ user, assistant });
+  }
+
+  return turns;
 }
