@@ -155,6 +155,20 @@ function formatBulletNodes(items) {
     .join("\n");
 }
 
+function getBulletStats(items) {
+  const normalized = normalizeBulletNodes(items);
+
+  return {
+    totalCount: normalized.length,
+    topLevelCount: normalized.filter((item) => item.level === 0).length,
+  };
+}
+
+function isTooThinStandardSummary(items) {
+  const stats = getBulletStats(items);
+  return stats.topLevelCount < 4 || stats.totalCount < 8;
+}
+
 function extractUsageTokens(usage) {
   if (!usage || typeof usage !== "object") {
     return { inputTokens: 0, outputTokens: 0 };
@@ -323,7 +337,46 @@ app.post("/api/summarize", async (req, res) => {
       input: `Source: ${sourceLabel}\n\nContent:\n${contextText}`,
     });
 
-    const parsed = parseStructuredResponse(response.output_text);
+    let parsed = parseStructuredResponse(response.output_text);
+
+    let extraCost = 0;
+
+    if (summaryMode === "standard" && isTooThinStandardSummary(parsed.summaryBullets)) {
+      const expansionResponse = await client.responses.create({
+        model: "gpt-5.4-mini",
+        instructions: [
+          "You are expanding a standard summary that is too short.",
+          "Rewrite it into a richer knowledge map with more concrete information.",
+          "Do not limit it to three bullets.",
+          "Use at least 4 top-level sections for medium or long content, and 8 to 12 total bullet nodes when the source has enough detail.",
+          "Each top-level section must be specific and informative, not generic.",
+          "Under each top-level section, add 1 to 3 nested bullets with concrete facts, examples, causes, effects, tradeoffs, or why it matters.",
+          "Return valid JSON only with the same shape as before.",
+          '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
+          "Keep summaryType as bullets and keep summaryText empty.",
+          "Do not include markdown fences, commentary, or any text outside JSON.",
+        ].join("\n"),
+        input: [
+          `Source: ${sourceLabel}`,
+          "",
+          `Content:\n${contextText}`,
+          "",
+          `Current summary to expand:\n${formatBulletNodes(parsed.summaryBullets)}`,
+        ].join("\n"),
+      });
+
+      const expandedParsed = parseStructuredResponse(expansionResponse.output_text);
+
+      if (getBulletStats(expandedParsed.summaryBullets).totalCount > getBulletStats(parsed.summaryBullets).totalCount) {
+        parsed = expandedParsed;
+      }
+
+      const expansionUsage = extractUsageTokens(expansionResponse.usage);
+      extraCost =
+        expansionUsage.inputTokens > 0 || expansionUsage.outputTokens > 0
+          ? estimateCostUsd(expansionUsage.inputTokens, expansionUsage.outputTokens)
+          : 0;
+    }
     const { inputTokens, outputTokens } = extractUsageTokens(response.usage);
     const actualCost =
       inputTokens > 0 || outputTokens > 0
@@ -331,7 +384,7 @@ app.post("/api/summarize", async (req, res) => {
         : estimatedRequestCost;
     const updatedLedger = {
       monthKey: currentMonth,
-      spentUsd: Number((normalizedLedger.spentUsd + actualCost).toFixed(6)),
+      spentUsd: Number((normalizedLedger.spentUsd + actualCost + extraCost).toFixed(6)),
     };
 
     await writeLedger(updatedLedger);
