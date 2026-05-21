@@ -23,7 +23,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Create a structured note outline that captures the content thoroughly. Do not force the response into a fixed number of core conclusions; let the source content decide. Usually use 3 to 6 top-level conclusions, but use fewer if the source is small and more if it naturally contains several important ideas. Each top-level bullet should be a clear takeaway, not a generic heading. Under each top-level conclusion, add only the supporting child bullets that actually fit that conclusion. Child bullets should be plain sentences or fragments, not labels or mini headings. Do not use phrases like 'Why it matters', 'Supporting details', or 'Implications' in the output. Use concrete examples, causes, effects, or reasons whenever possible, but only when they are genuinely useful for that specific bullet. If the source is about a specific event, mission, or product, keep that exact name front and center and do not replace it with a generic company description. The goal is a dense knowledge map with clear hierarchy, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
+      "Create a structured note outline that captures the content thoroughly. Do not force the response into a fixed number of core conclusions; let the source content decide. Usually use 3 to 6 top-level conclusions, but use fewer if the source is small and more if it naturally contains several important ideas. Each top-level bullet should be a clear takeaway, not a generic heading. Under each top-level conclusion, add supporting child bullets whenever the source justifies them. Keep the hierarchy visible, but do not label the child bullets with phrases like 'Why it matters', 'Supporting details', or 'Implications'. Child bullets should stay as natural sentences or fragments that explain the reason, example, consequence, or context in plain language. If the source is about a specific event, mission, or product, keep that exact name front and center and do not replace it with a generic company description. The goal is a dense knowledge map with clear hierarchy, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
   },
   key_insights: {
     label: "Key Insights",
@@ -749,9 +749,9 @@ app.post("/api/summarize", async (req, res) => {
           "Rewrite it into a richer knowledge map with more concrete information.",
           "Do not force a fixed number of core conclusions; let the source content decide the count.",
           "Usually use 3 to 6 top-level conclusions, but use fewer for small sources and more when the content naturally has several important ideas.",
-          "Under each core conclusion, add only the supporting child bullets that actually fit that conclusion.",
-          "Do not use labels like 'Why it matters', 'Supporting details', or 'Implications' in the output. Child bullets should be plain sentences or fragments, not mini headings.",
-          "Each child bullet should be concrete with an example, cause, effect, implication, or reason only when that detail is genuinely useful for that bullet.",
+          "Under each core conclusion, add supporting child bullets whenever the source justifies them, so the hierarchy stays visible.",
+          "Do not use labels like 'Why it matters', 'Supporting details', or 'Implications' in the output. Child bullets should stay as natural sentences or fragments that explain the reason, example, consequence, or context in plain language.",
+          "Each child bullet should be concrete with an example, cause, effect, implication, or reason whenever that detail is genuinely useful for that bullet.",
           "Return valid JSON only with the same shape as before.",
           '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
           "Keep summaryType as bullets and keep summaryText empty.",
