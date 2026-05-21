@@ -1,4 +1,5 @@
 import { getSummaryMode, type SummaryModeId } from "./summaryModes";
+import { MAX_INPUT_CHARACTERS, MAX_INPUT_TOKENS } from "./limits.js";
 
 const MODEL_PRICING = {
   inputPerMillion: 0.75,
@@ -32,3 +33,5 @@ export function getUsageEstimate(inputText: string, modeId: SummaryModeId) {
     estimatedCost,
   };
 }
+
+export { MAX_INPUT_CHARACTERS, MAX_INPUT_TOKENS };

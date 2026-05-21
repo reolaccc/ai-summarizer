@@ -11,7 +11,7 @@ import {
 } from "./lib/export";
 import { DEFAULT_SUMMARY_MODE, getSummaryMode, type SummaryModeId } from "./lib/summaryModes";
 import { extractPdfText } from "./lib/pdf";
-import { getUsageEstimate } from "./lib/estimate";
+import { MAX_INPUT_CHARACTERS, MAX_INPUT_TOKENS, getUsageEstimate } from "./lib/estimate";
 
 type SummaryResponse = {
   modeLabel: string;
@@ -54,6 +54,7 @@ export default function App() {
   const usageEstimate = useMemo(() => getUsageEstimate(inputValue, summaryMode), [inputValue, summaryMode]);
   const hasSummary = Boolean(summary);
   const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "");
+  const isInputTooLarge = inputValue.trim().length > MAX_INPUT_CHARACTERS;
 
   async function handlePdfFileSelected(file: File) {
     setError(null);
@@ -105,6 +106,13 @@ export default function App() {
 
     if (!content) {
       setError("Please paste text or upload a PDF before generating a summary.");
+      return;
+    }
+
+    if (content.length > MAX_INPUT_CHARACTERS) {
+      setError(
+        `This demo only supports inputs up to ${MAX_INPUT_CHARACTERS.toLocaleString()} characters (about ${Math.round(MAX_INPUT_TOKENS).toLocaleString()} tokens). Please paste a shorter excerpt, upload a smaller PDF, or split the document into sections.`,
+      );
       return;
     }
 
@@ -351,6 +359,9 @@ export default function App() {
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-fuchsia-100/70">
                 <span>{inputValue.trim().length.toLocaleString()} characters</span>
                 {isPdfProcessing ? <span>Processing PDF...</span> : null}
+                <span className={isInputTooLarge ? "text-rose-200" : "text-fuchsia-100/60"}>
+                  Max {MAX_INPUT_CHARACTERS.toLocaleString()} chars
+                </span>
               </div>
             </div>
           </div>
@@ -388,11 +399,18 @@ export default function App() {
             <button
               type="button"
               onClick={handleGenerateSummary}
-              disabled={isGenerating || isPdfProcessing}
+              disabled={isGenerating || isPdfProcessing || isInputTooLarge}
               className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-400 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(236,72,153,0.35)] transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:bg-slate-500"
             >
               {isGenerating ? "Generating..." : "Generate Summary"}
             </button>
+
+            {isInputTooLarge ? (
+              <p className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-100">
+                Input too large. Please keep it under {MAX_INPUT_CHARACTERS.toLocaleString()} characters
+                for this demo so we do not spend the whole API budget on one document.
+              </p>
+            ) : null}
 
             {error ? (
               <p className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-100">
