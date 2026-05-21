@@ -279,9 +279,9 @@ export default function App() {
           </div>
         </header>
 
-        <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
+        <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
           <div
-            className={`rounded-[1.75rem] border p-4 transition ${
+            className={`rounded-[1.75rem] border p-3 transition ${
               isInputDragActive ? "border-fuchsia-300/35 bg-fuchsia-500/12" : "border-fuchsia-400/15 bg-white/6"
             }`}
             onDragOver={(event) => {
@@ -307,7 +307,7 @@ export default function App() {
               onChange={handleSelectedPdf}
             />
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-flex flex-wrap gap-2">
                   {sourceLabel ? (
@@ -337,7 +337,7 @@ export default function App() {
                   setError(null);
                 }}
                 placeholder="Paste your text here or drop a PDF"
-                className="min-h-[280px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-4 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
+                className="min-h-[150px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-3 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
               />
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-fuchsia-100/70">
