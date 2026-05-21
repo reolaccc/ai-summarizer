@@ -8,7 +8,6 @@ type SummaryProps = {
   summaryBullets: BulletNode[];
   insightPairs: { insight: string; question: string }[];
   onCopy: () => void;
-  onExportMarkdown: () => void;
   onExportText: () => void;
   canCopy: boolean;
 };
@@ -21,7 +20,6 @@ export function SummaryCard({
   summaryBullets,
   insightPairs,
   onCopy,
-  onExportMarkdown,
   onExportText,
   canCopy,
 }: SummaryProps) {
@@ -53,14 +51,6 @@ export function SummaryCard({
           </button>
           <button
             type="button"
-            onClick={onExportMarkdown}
-            disabled={!canCopy}
-            className="rounded-2xl border border-fuchsia-400/20 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Export .md
-          </button>
-          <button
-            type="button"
             onClick={onExportText}
             disabled={!canCopy}
             className="rounded-2xl border border-fuchsia-400/20 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-500/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -83,7 +73,7 @@ export function SummaryCard({
               <div key={`${pair.insight}-${index}`} className="rounded-2xl border border-fuchsia-400/15 bg-[#1b0917] p-4">
                 <p className="text-sm font-semibold text-fuchsia-200">Insight</p>
                 <p className="mt-2 text-sm leading-7 text-fuchsia-50/90">{pair.insight}</p>
-                <p className="mt-4 text-sm font-semibold text-fuchsia-200">Question</p>
+                <p className="mt-4 text-sm font-semibold text-fuchsia-200">Investigate</p>
                 <p className="mt-2 text-sm leading-7 text-fuchsia-100/70">{pair.question}</p>
               </div>
             ))}

@@ -3,7 +3,6 @@ import { SummaryCard } from "./components/ResultCards";
 import { SummaryModeSelector } from "./components/SummaryModeSelector";
 import { type BulletNode } from "./lib/bullets";
 import {
-  buildMarkdownExport,
   buildPlainTextExport,
   buildSummaryClipboardText,
   copyToClipboard,
@@ -183,25 +182,6 @@ export default function App() {
     );
   }
 
-  function handleExportMarkdown() {
-    if (!summary) {
-      return;
-    }
-
-    downloadTextFile(
-      "ai-summary.md",
-      buildMarkdownExport({
-        title: DEFAULT_TITLE,
-        summaryLabel: summary.modeLabel,
-        summaryType: summary.summaryType,
-        summaryText: summary.summaryText,
-        summaryBullets: summary.summaryBullets,
-        insightPairs: summary.insightPairs,
-        questions: summary.questions,
-      }),
-    );
-  }
-
   function handleExportText() {
     if (!summary) {
       return;
@@ -223,7 +203,10 @@ export default function App() {
 
   async function handleSendChat(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await submitChatQuestion();
+  }
 
+  async function submitChatQuestion() {
     if (!summary) {
       setError("Generate a summary first so I have context for follow-up questions.");
       return;
@@ -429,7 +412,6 @@ export default function App() {
             summaryBullets={summary?.summaryBullets ?? []}
             insightPairs={summary?.insightPairs ?? []}
             onCopy={handleCopySummary}
-            onExportMarkdown={handleExportMarkdown}
             onExportText={handleExportText}
             canCopy={hasSummary}
           />
@@ -446,6 +428,12 @@ export default function App() {
             <textarea
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void submitChatQuestion();
+                }
+              }}
               placeholder="Ask a question about the summary..."
               className="min-h-[120px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-4 text-sm leading-6 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
             />

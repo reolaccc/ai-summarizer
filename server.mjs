@@ -35,7 +35,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Explain Like I'm 10",
     summaryType: "paragraph",
     instructions:
-      "Explain the content in very simple language, as if speaking to a curious 10-year-old. Do not just simplify the wording; make the idea concrete, friendly, and easy to picture. Use 3 short paragraphs when helpful: first explain the main idea, then give a concrete everyday example or analogy, then explain why it matters. Keep the tone warm, encouraging, and a little conversational. Avoid jargon. If you mention a technical term, explain it right away in simple words.",
+      "Explain the content in very simple language, as if speaking to a curious 10-year-old. Do not just simplify the wording; make the idea concrete, friendly, and easy to picture. Use at least 3 short paragraphs: first explain the main idea, then give a concrete everyday example or analogy, then explain why it matters. Keep the tone warm, encouraging, and a little conversational. Avoid jargon. If you mention a technical term, explain it right away in simple words.",
   },
 };
 

@@ -19,7 +19,7 @@ function buildSummaryLines(payload: SummaryOnlyPayload) {
 
   if (payload.summaryType === "insights") {
     return payload.insightPairs
-      .map((pair) => [`Insight: ${pair.insight}`, `Question: ${pair.question}`].join("\n"))
+      .map((pair) => [`Insight: ${pair.insight}`, `Investigate: ${pair.question}`].join("\n"))
       .join("\n\n");
   }
 
