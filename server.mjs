@@ -239,6 +239,13 @@ function formatBulletNodes(items) {
     .join("\n");
 }
 
+function splitBullets(text) {
+  return String(text ?? "")
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-*•]\s*/, "").trim())
+    .filter(Boolean);
+}
+
 function getBulletStats(items) {
   const normalized = normalizeBulletNodes(items);
 
@@ -659,7 +666,10 @@ app.post("/api/chat", async (req, res) => {
     await writeLedger(updatedLedger);
 
     return res.json({
-      answer: answerBullets.length > 0 ? answerBullets.join("\n") : response.output_text.trim(),
+      answer:
+        answerBullets.length > 0
+          ? answerBullets.join("\n")
+          : response.output_text.trim() || "I could not generate a response for that question, but the source may still contain the answer.",
       spend: {
         monthKey: updatedLedger.monthKey,
         spentUsd: updatedLedger.spentUsd,
