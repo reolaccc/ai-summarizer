@@ -21,9 +21,9 @@ const MODEL_PRICING = {
 const SUMMARY_MODE_PROMPTS = {
   standard: {
     label: "Standard Summary",
-    summaryType: "bullets",
+    summaryType: "paragraph",
     instructions:
-      "Create a structured note outline that captures the content thoroughly. Do not force the response into a fixed number of core conclusions; let the source content decide. Usually use 3 to 6 top-level conclusions, but use fewer if the source is small and more if it naturally contains several important ideas. Each top-level bullet should be a clear takeaway, not a generic heading. Under each top-level conclusion, add supporting child bullets whenever the source justifies them. Keep the hierarchy visible, but do not label the child bullets with phrases like 'Why it matters', 'Supporting details', or 'Implications'. Child bullets should stay as natural sentences or fragments that explain the reason, example, consequence, or context in plain language. If the source is about a specific event, mission, or product, keep that exact name front and center and do not replace it with a generic company description. The goal is a dense knowledge map with clear hierarchy, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
+      "Create a paragraph-first summary that adapts to the source instead of forcing a list. Write 2 to 5 clear paragraphs, depending on how much material matters. Each paragraph should cover one meaningful idea or theme and should read like natural prose, not note fragments. If a paragraph genuinely needs supporting details, examples, consequences, or caveats, you may add a short bullet block directly after that paragraph using plain '- ' bullets. Do not turn the whole response into bullets. If the source is simple, use paragraphs only. Keep important names, events, missions, and products exact instead of replacing them with generic descriptions. The goal is a readable summary with optional local structure inside a paragraph section, not a flat bullet list and not a vague paraphrase.",
   },
   key_insights: {
     label: "Key Insights",
@@ -258,6 +258,28 @@ function splitParagraphs(text) {
     .filter(Boolean);
 }
 
+function countWords(text) {
+  return String(text ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean).length;
+}
+
+function countBulletLines(text) {
+  return String(text ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^[-*•]\s+/.test(line)).length;
+}
+
+function hasParagraphContent(text) {
+  return String(text ?? "")
+    .split(/\n\s*\n+/)
+    .map((block) => block.trim())
+    .some((block) => block && !block.split("\n").every((line) => /^[-*•]\s+/.test(line.trim())));
+}
+
 function splitSentences(text) {
   const cleaned = String(text ?? "").replace(/\s+/g, " ").trim();
 
@@ -387,24 +409,27 @@ function createMockSummaryResponse({ summaryMode, contextText, sourceLabel }) {
         "What makes this launch different from a normal rocket ride?",
       ],
     };
-  } else if (lowerSource.includes("starship") && lowerSource.includes("flight 12")) {
+  } else if (
+    lowerSource.includes("starship") &&
+    (lowerSource.includes("flight 12") || lowerSource.includes("twelfth flight test"))
+  ) {
     payload = {
-      summaryType: "bullets",
-      summaryText: "",
-      summaryBullets: [
-        { text: "The mission centers on proving the redesigned Starship system can move through a full flight sequence cleanly.", level: 0 },
-        { text: "That makes the flight a system test for reliability, not just a simple launch demo.", level: 1 },
-        { text: "The launch window opens Thursday, May 21 at 5:30 p.m. CT and the webcast begins about 45 minutes earlier.", level: 1 },
-        { text: "If the sequence works, SpaceX gains confidence in the vehicle's launch, separation, and landing behavior.", level: 1 },
-        { text: "The booster is being tested as a high-stakes part of the mission, but not as a catch attempt at the launch site.", level: 0 },
-        { text: "Avoiding a catch keeps the focus on proving the redesigned booster can fly through the key stages first.", level: 1 },
-        { text: "The booster is meant to complete launch, ascent, stage separation, boostback burn, and landing burn.", level: 1 },
-        { text: "A successful run would show the booster can handle its flight duties before SpaceX asks it to do even more.", level: 1 },
-        { text: "The upper stage is also carrying payload and reentry tests that help prepare future missions.", level: 0 },
-        { text: "These tests connect today's flight to the longer-term goal of reuse and future return-to-site missions.", level: 1 },
-        { text: "The upper stage plans to deploy 20 Starlink simulators, two specially modified satellites, and attempt a Raptor relight.", level: 1 },
-        { text: "If those tests go well, SpaceX gets more data on heat shield imaging, relight behavior, and reentry stress.", level: 1 },
-      ],
+      summaryType: "paragraph",
+      summaryText: [
+        "Starship Flight 12 is being presented as a full-system test of the redesigned vehicle rather than a simple launch demonstration. The main goal is to see whether the rocket can move through the major phases of flight cleanly enough to build confidence in the overall system.",
+        "- The launch window opens Thursday, May 21 at 5:30 p.m. CT.",
+        "- The webcast begins about 45 minutes earlier.",
+        "- A successful sequence would strengthen confidence in launch, separation, and landing behavior.",
+        "",
+        "The booster portion of the mission is important because SpaceX is testing demanding flight behavior without also attempting a launch-site catch. That keeps the mission focused on proving core booster performance before adding another layer of difficulty.",
+        "- The booster is expected to complete ascent, stage separation, boostback burn, and landing burn.",
+        "- Skipping the catch reduces complexity while still generating critical flight data.",
+        "",
+        "The upper stage is also doing work that matters beyond this single launch, including payload and reentry-related tests tied to future reuse. That makes the mission useful not only as a pass-or-fail event, but as a way to gather data that supports later Starship operations.",
+        "- The plan includes deploying 20 Starlink simulators and two modified satellites.",
+        "- SpaceX also wants to attempt a Raptor relight and collect reentry data.",
+      ].join("\n"),
+      summaryBullets: [],
       insightPairs: [],
       questions: [
         "Which part of the mission is the biggest technical leap?",
@@ -414,22 +439,15 @@ function createMockSummaryResponse({ summaryMode, contextText, sourceLabel }) {
     };
   } else {
     payload = {
-      summaryType: "bullets",
-      summaryText: "",
-      summaryBullets: [
-        { text: "Core takeaway 1: the most important idea should be stated plainly at the top.", level: 0 },
-        { text: "Readers need the main conclusion before any supporting detail.", level: 1 },
-        { text: "The summary should point to the specific facts that prove the conclusion.", level: 1 },
-        { text: "A clear first takeaway helps the rest of the structure feel organized instead of random.", level: 1 },
-        { text: "Core takeaway 2: the next layer should explain the evidence or example behind the idea.", level: 0 },
-        { text: "This is what turns a generic summary into something useful and memorable.", level: 1 },
-        { text: "Examples, consequences, and reasons should sit under the main point, not float alone.", level: 1 },
-        { text: "The reader can scan the shape of the argument and understand the logic quickly.", level: 1 },
-        { text: "Core takeaway 3: the final layer should show why the information matters going forward.", level: 0 },
-        { text: "Without the effect or implication, the summary feels unfinished.", level: 1 },
-        { text: "The source should be translated into what this means in practice.", level: 1 },
-        { text: "The summary becomes a small decision map instead of a flat list of facts.", level: 1 },
-      ],
+      summaryType: "paragraph",
+      summaryText: [
+        "A strong standard summary should lead with clear paragraphs that explain the main ideas in plain language instead of instantly collapsing everything into bullets. That gives the reader an actual narrative of what matters and how the ideas connect.",
+        "",
+        "When a section carries extra detail, a short supporting bullet list can help without taking over the whole response. Used carefully, those bullets add evidence, examples, or consequences under the paragraph they belong to rather than replacing the paragraph itself.",
+        "",
+        "The result should feel readable first and structured second. In practice, that means the summary stays easy to scan while still preserving the most useful detail from the source.",
+      ].join("\n"),
+      summaryBullets: [],
       insightPairs: [],
       questions: [
         "What is the central takeaway here?",
@@ -479,9 +497,16 @@ function getBulletStats(items) {
   };
 }
 
-function isTooThinStandardSummary(items) {
-  const stats = getBulletStats(items);
-  return stats.topLevelCount < 3 || stats.totalCount < 12;
+function isTooThinStandardSummary(summary) {
+  if (summary?.summaryType !== "paragraph") {
+    return true;
+  }
+
+  const paragraphCount = splitParagraphs(summary.summaryText).length;
+  const wordCount = countWords(summary.summaryText);
+  const bulletLineCount = countBulletLines(summary.summaryText);
+
+  return !hasParagraphContent(summary.summaryText) || paragraphCount < 2 || wordCount < 90 || bulletLineCount > 8;
 }
 
 function buildInputLimitMessage() {
@@ -741,20 +766,19 @@ app.post("/api/summarize", async (req, res) => {
       };
     }
 
-    if (!useMockResponses && summaryMode === "standard" && isTooThinStandardSummary(parsed.summaryBullets)) {
+    if (!useMockResponses && summaryMode === "standard" && isTooThinStandardSummary(parsed)) {
       const expansionResponse = await client.responses.create({
         model: "gpt-5.4-mini",
         instructions: [
           "You are expanding a standard summary that is too short.",
-          "Rewrite it into a richer knowledge map with more concrete information.",
-          "Do not force a fixed number of core conclusions; let the source content decide the count.",
-          "Usually use 3 to 6 top-level conclusions, but use fewer for small sources and more when the content naturally has several important ideas.",
-          "Under each core conclusion, add supporting child bullets whenever the source justifies them, so the hierarchy stays visible.",
-          "Do not use labels like 'Why it matters', 'Supporting details', or 'Implications' in the output. Child bullets should stay as natural sentences or fragments that explain the reason, example, consequence, or context in plain language.",
-          "Each child bullet should be concrete with an example, cause, effect, implication, or reason whenever that detail is genuinely useful for that bullet.",
+          "Rewrite it into a richer paragraph-based summary with more concrete information.",
+          "Write 2 to 5 real paragraphs based on the source.",
+          "Each paragraph should cover one meaningful idea in natural prose.",
+          "You may add a short '- ' bullet block only when a paragraph truly benefits from supporting details, examples, or implications.",
+          "Do not turn the whole output into bullets.",
           "Return valid JSON only with the same shape as before.",
           '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
-          "Keep summaryType as bullets and keep summaryText empty.",
+          "Keep summaryType as paragraph and keep summaryBullets empty.",
           "Do not include markdown fences, commentary, or any text outside JSON.",
         ].join("\n"),
         input: [
@@ -762,13 +786,13 @@ app.post("/api/summarize", async (req, res) => {
           "",
           `Content:\n${contextText}`,
           "",
-          `Current summary to expand:\n${formatBulletNodes(parsed.summaryBullets)}`,
+          `Current summary to expand:\n${parsed.summaryText || formatBulletNodes(parsed.summaryBullets)}`,
         ].join("\n"),
       });
 
       const expandedParsed = parseStructuredResponse(expansionResponse.output_text);
 
-      if (getBulletStats(expandedParsed.summaryBullets).totalCount > getBulletStats(parsed.summaryBullets).totalCount) {
+      if (!isTooThinStandardSummary(expandedParsed)) {
         parsed = expandedParsed;
       }
 

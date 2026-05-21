@@ -393,7 +393,7 @@ export default function App() {
           <SummaryCard
             modeLabel={summary?.modeLabel ?? selectedMode.label}
             sourceLabel={summary?.sourceLabel ?? null}
-            summaryType={summary?.summaryType ?? "bullets"}
+            summaryType={summary?.summaryType ?? selectedMode.outputType}
             summaryText={summary?.summaryText ?? ""}
             summaryBullets={summary?.summaryBullets ?? []}
             insightPairs={summary?.insightPairs ?? []}

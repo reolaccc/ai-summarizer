@@ -79,15 +79,58 @@ export function SummaryCard({
             ))}
           </div>
         ) : hasSummaryContent ? (
-          <p className="whitespace-pre-line text-sm leading-7 text-fuchsia-50/90 md:text-base">
-            {summaryText}
-          </p>
+          <StructuredParagraphSummary text={summaryText} />
         ) : (
           <div className="min-h-10" />
         )}
       </div>
     </section>
   );
+}
+
+function StructuredParagraphSummary({ text }: { text: string }) {
+  const blocks = splitStructuredBlocks(text);
+
+  return (
+    <div className="space-y-4 text-sm leading-7 text-fuchsia-50/90 md:text-base">
+      {blocks.map((block, index) =>
+        block.type === "bullets" ? (
+          <ul
+            key={`bullets-${index}`}
+            className="ml-5 list-disc space-y-2 text-fuchsia-100/85 marker:text-fuchsia-300"
+          >
+            {block.items.map((item, itemIndex) => (
+              <li key={`${item}-${itemIndex}`}>{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <p key={`paragraph-${index}`} className="whitespace-pre-line">
+            {block.text}
+          </p>
+        ),
+      )}
+    </div>
+  );
+}
+
+function splitStructuredBlocks(text: string) {
+  return String(text ?? "")
+    .split(/\n\s*\n+/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      const bulletItems = lines
+        .filter((line) => /^[-*•]\s+/.test(line))
+        .map((line) => line.replace(/^[-*•]\s+/, "").trim())
+        .filter(Boolean);
+
+      if (lines.length > 0 && bulletItems.length === lines.length) {
+        return { type: "bullets" as const, items: bulletItems };
+      }
+
+      return { type: "paragraph" as const, text: block };
+    });
 }
 
 function BulletTreeItem({ node }: { node: ReturnType<typeof buildBulletTree>[number] }) {

@@ -17,8 +17,8 @@ export const SUMMARY_MODES: SummaryModeConfig[] = [
   {
     id: "standard",
     label: "Standard Summary",
-    description: "Layered conclusions that adapt to the source.",
-    outputType: "bullets",
+    description: "Paragraph-first summary with optional supporting bullets.",
+    outputType: "paragraph",
     estimatedOutputTokens: 900,
   },
   {
