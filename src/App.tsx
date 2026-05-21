@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { SummaryCard } from "./components/ResultCards";
 import { SummaryModeSelector } from "./components/SummaryModeSelector";
 import { type BulletNode } from "./lib/bullets";
@@ -10,7 +10,7 @@ import {
 } from "./lib/export";
 import { DEFAULT_SUMMARY_MODE, getSummaryMode, type SummaryModeId } from "./lib/summaryModes";
 import { extractPdfText } from "./lib/pdf";
-import { MAX_INPUT_CHARACTERS, MAX_INPUT_TOKENS, getUsageEstimate } from "./lib/estimate";
+import { MAX_INPUT_CHARACTERS, MAX_INPUT_TOKENS } from "./lib/estimate";
 
 type SummaryResponse = {
   modeLabel: string;
@@ -50,7 +50,6 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedMode = getSummaryMode(summaryMode);
-  const usageEstimate = useMemo(() => getUsageEstimate(inputValue, summaryMode), [inputValue, summaryMode]);
   const hasSummary = Boolean(summary);
   const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "");
   const isInputTooLarge = inputValue.trim().length > MAX_INPUT_CHARACTERS;
@@ -363,19 +362,6 @@ export default function App() {
             <div className="rounded-[1.5rem] border border-fuchsia-400/15 bg-white/6 p-4">
               <div className="flex flex-col gap-4">
                 <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
-                <div className="rounded-2xl border border-fuchsia-400/15 bg-[#1b0917] p-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
-                      Input ~{usageEstimate.inputTokens.toLocaleString()}
-                    </span>
-                    <span className="rounded-full bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
-                      Output ~{usageEstimate.outputTokens.toLocaleString()}
-                    </span>
-                    <span className="rounded-full bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
-                      Cost ~${usageEstimate.estimatedCost.toFixed(4)}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
 
