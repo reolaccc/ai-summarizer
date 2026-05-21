@@ -264,9 +264,9 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#5b0f46_0%,_#3f0834_40%,_#160111_100%)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+    <main className="crystal-page min-h-screen px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="rounded-[2rem] border border-fuchsia-400/20 bg-white/6 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)] backdrop-blur">
+        <header className="crystal-panel rounded-[2rem] p-6">
           <div className="max-w-3xl">
             <h1 className="text-5xl font-black tracking-tight text-fuchsia-50 drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)] sm:text-7xl">
               AI Summarizer
@@ -277,10 +277,10 @@ export default function App() {
           </div>
         </header>
 
-        <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
+        <section className="crystal-panel rounded-[2rem] p-3">
           <div
-            className={`rounded-[1.75rem] border p-3 transition ${
-              isInputDragActive ? "border-fuchsia-300/35 bg-fuchsia-500/12" : "border-fuchsia-400/15 bg-white/6"
+            className={`crystal-panel rounded-[1.75rem] p-3 transition ${
+              isInputDragActive ? "border-fuchsia-300/35" : ""
             }`}
             onDragOver={(event) => {
               event.preventDefault();
@@ -319,14 +319,14 @@ export default function App() {
                     </span>
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={openPdfPicker}
-                  className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:bg-fuchsia-500/20"
-                >
-                  Upload PDF
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={openPdfPicker}
+                className="crystal-chip rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:opacity-95"
+              >
+                Upload PDF
+              </button>
+            </div>
 
               <textarea
                 value={inputValue}
@@ -335,7 +335,7 @@ export default function App() {
                   setError(null);
                 }}
                 placeholder="Paste your text here or drop a PDF"
-                className="min-h-[150px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-3 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
+                className="crystal-input min-h-[150px] w-full resize-y rounded-[1.5rem] px-4 py-3 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40"
               />
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-fuchsia-100/70">
@@ -349,7 +349,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
+        <section className="crystal-panel rounded-[2rem] p-5">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -359,7 +359,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] border border-fuchsia-400/15 bg-white/6 p-4">
+            <div className="crystal-card rounded-[1.5rem] p-4">
               <div className="flex flex-col gap-4">
                 <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
               </div>
@@ -369,20 +369,20 @@ export default function App() {
               type="button"
               onClick={handleGenerateSummary}
               disabled={isGenerating || isPdfProcessing || isInputTooLarge}
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-400 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(236,72,153,0.35)] transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+              className="crystal-action inline-flex w-full items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold text-white transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isGenerating ? "Generating..." : "Generate Summary"}
             </button>
 
             {isInputTooLarge ? (
-              <p className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-100">
+              <p className="crystal-card rounded-2xl px-4 py-3 text-sm leading-6 text-rose-100">
                 Input too large. Please keep it under {MAX_INPUT_CHARACTERS.toLocaleString()} characters
                 for this demo so we do not spend the whole API budget on one document.
               </p>
             ) : null}
 
             {error ? (
-              <p className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-100">
+              <p className="crystal-card rounded-2xl px-4 py-3 text-sm leading-6 text-rose-100">
                 {error}
               </p>
             ) : null}
@@ -403,7 +403,7 @@ export default function App() {
           />
         </section>
 
-        <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
+        <section className="crystal-panel rounded-[2rem] p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-200">Ask a follow-up</h2>
@@ -421,13 +421,13 @@ export default function App() {
                 }
               }}
               placeholder="Ask a question about the summary..."
-              className="min-h-[120px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-4 text-sm leading-6 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
+              className="crystal-input min-h-[120px] w-full resize-y rounded-[1.5rem] px-4 py-4 text-sm leading-6 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 type="submit"
                 disabled={isSendingChat || !hasSummary}
-                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-400 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(236,72,153,0.35)] transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+                className="crystal-action inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSendingChat ? "Thinking..." : "Send Question"}
               </button>
@@ -439,10 +439,10 @@ export default function App() {
               chatMessages.map((message, index) => (
                 <div
                   key={`${message.role}-${index}`}
-                  className={`rounded-2xl border px-4 py-3 text-sm leading-7 ${
+                  className={`crystal-card rounded-2xl px-4 py-3 text-sm leading-7 ${
                     message.role === "user"
-                      ? "border-fuchsia-300/20 bg-fuchsia-500/10 text-fuchsia-50"
-                      : "border-fuchsia-400/15 bg-[#1b0917] text-fuchsia-50"
+                      ? "text-fuchsia-50"
+                      : "text-fuchsia-50"
                   }`}
                 >
                   <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">

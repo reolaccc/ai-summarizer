@@ -33,7 +33,7 @@ export function SummaryCard({
   const bulletTree = buildBulletTree(summaryBullets);
 
   return (
-    <section className="rounded-3xl border border-fuchsia-400/20 bg-[#170613]/85 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.22)] backdrop-blur">
+    <section className="crystal-panel rounded-3xl p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-200">Summary</h2>
@@ -45,7 +45,7 @@ export function SummaryCard({
             type="button"
             onClick={onCopy}
             disabled={!canCopy}
-            className="rounded-2xl border border-fuchsia-400/20 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            className="crystal-action-secondary rounded-2xl px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Copy Summary
           </button>
@@ -53,14 +53,14 @@ export function SummaryCard({
             type="button"
             onClick={onExportText}
             disabled={!canCopy}
-            className="rounded-2xl border border-fuchsia-400/20 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            className="crystal-action-secondary rounded-2xl px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Export .txt
           </button>
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-fuchsia-400/10 bg-[#240d1f] p-4">
+      <div className="crystal-card mt-4 rounded-2xl p-4">
         {hasSummaryContent && summaryType === "bullets" ? (
           <div className="space-y-3">
             {bulletTree.map((item, index) => (
@@ -70,7 +70,7 @@ export function SummaryCard({
         ) : hasSummaryContent && summaryType === "insights" ? (
           <div className="space-y-3">
             {insightPairs.map((pair, index) => (
-              <div key={`${pair.insight}-${index}`} className="rounded-2xl border border-fuchsia-400/15 bg-[#1b0917] p-4">
+              <div key={`${pair.insight}-${index}`} className="crystal-card rounded-2xl p-4">
                 <p className="text-sm font-semibold text-fuchsia-200">Insight</p>
                 <p className="mt-2 text-sm leading-7 text-fuchsia-50/90">{pair.insight}</p>
                 <p className="mt-4 text-sm font-semibold text-fuchsia-200">Investigate</p>
@@ -94,7 +94,7 @@ function BulletTreeItem({ node }: { node: ReturnType<typeof buildBulletTree>[num
   const padding = Math.min(node.level, 3) * 16;
 
   return (
-    <div className="rounded-2xl border border-fuchsia-400/10 bg-[#1b0917] px-4 py-3" style={{ marginLeft: padding }}>
+    <div className="crystal-card rounded-2xl px-4 py-3" style={{ marginLeft: padding }}>
       <div className="flex gap-3">
         <span
           className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
