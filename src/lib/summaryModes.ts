@@ -17,7 +17,7 @@ export const SUMMARY_MODES: SummaryModeConfig[] = [
   {
     id: "standard",
     label: "Standard Summary",
-    description: "3 core conclusions with layered subpoints.",
+    description: "Layered conclusions that adapt to the source.",
     outputType: "bullets",
     estimatedOutputTokens: 900,
   },

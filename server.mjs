@@ -23,7 +23,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Create a structured note outline that captures the content thoroughly. Organize the response into exactly 3 core conclusions. Each top-level bullet should be a clear takeaway, not a generic heading. Under each top-level conclusion, add 3 supporting child bullets when the content supports it: one for Why it matters, one for Supporting details, and one for Implications. Use concrete examples, causes, effects, or reasons whenever possible. If the source is about a specific event, mission, or product, keep that exact name front and center and do not replace it with a generic company description. The goal is a dense knowledge map with clear hierarchy, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
+      "Create a structured note outline that captures the content thoroughly. Do not force the response into a fixed number of core conclusions; let the source content decide. Usually use 3 to 6 top-level conclusions, but use fewer if the source is small and more if it naturally contains several important ideas. Each top-level bullet should be a clear takeaway, not a generic heading. Under each top-level conclusion, add supporting child bullets that explain Why it matters, Supporting details, and Implications when the source supports them. Use concrete examples, causes, effects, or reasons whenever possible. If the source is about a specific event, mission, or product, keep that exact name front and center and do not replace it with a generic company description. The goal is a dense knowledge map with clear hierarchy, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
   },
   key_insights: {
     label: "Key Insights",
@@ -629,8 +629,9 @@ app.post("/api/summarize", async (req, res) => {
         instructions: [
           "You are expanding a standard summary that is too short.",
           "Rewrite it into a richer knowledge map with more concrete information.",
-          "Use exactly 3 core conclusions.",
-          "Under each core conclusion, add 3 supporting child bullets when the source supports that level of depth.",
+          "Do not force a fixed number of core conclusions; let the source content decide the count.",
+          "Usually use 3 to 6 top-level conclusions, but use fewer for small sources and more when the content naturally has several important ideas.",
+          "Under each core conclusion, add supporting child bullets that explain Why it matters, Supporting details, and Implications when the source supports that level of depth.",
           "Each child bullet should cover Why it matters, Supporting details, or Implications, and should be concrete with an example, cause, effect, implication, or reason why it matters.",
           "Return valid JSON only with the same shape as before.",
           '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
