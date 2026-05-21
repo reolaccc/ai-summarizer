@@ -51,7 +51,7 @@ export default function App() {
   const selectedMode = getSummaryMode(summaryMode);
   const usageEstimate = useMemo(() => getUsageEstimate(inputValue, summaryMode), [inputValue, summaryMode]);
   const hasSummary = Boolean(summary);
-  const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "Paste text, article URL, or upload a PDF");
+  const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "");
 
   async function handlePdfFileSelected(file: File) {
     setError(null);
@@ -88,7 +88,7 @@ export default function App() {
     const content = inputValue.trim();
 
     if (!content) {
-      setError("Paste text, article URL, or upload a PDF before generating a summary.");
+      setError("Please paste text or upload a PDF before generating a summary.");
       return;
     }
 
@@ -254,16 +254,12 @@ export default function App() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fce7f3_0%,_#fff1f8_34%,_#ffffff_72%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <header className="rounded-[2rem] border border-pink-200/80 bg-white/90 p-6 shadow-sm backdrop-blur">
-          <div className="inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-700">
-            AI Summarizer
-          </div>
-          <div className="mt-4 max-w-3xl">
-            <h1 className="text-4xl font-black tracking-tight text-fuchsia-950 drop-shadow-sm sm:text-6xl">
-              Turn long content into clear summaries, fast.
+          <div className="max-w-3xl">
+            <h1 className="text-5xl font-black tracking-tight text-fuchsia-950 drop-shadow-sm sm:text-7xl">
+              AI Summarizer
             </h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-              Paste text, article URL, or upload a PDF. Keep the interface simple, with just enough structure to get
-              to the answer quickly.
+            <p className="mt-3 text-lg font-medium leading-7 text-slate-500 sm:text-xl">
+              Turn long content into clear summaries, fast.
             </p>
           </div>
         </header>
@@ -273,14 +269,13 @@ export default function App() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-700">Input</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Paste text, article URL, or upload a PDF.
-                </p>
               </div>
               <div className="inline-flex flex-wrap gap-2">
-                <span className="inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-700">
-                  {sourceLabel}
-                </span>
+                {sourceLabel ? (
+                  <span className="inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-700">
+                    {sourceLabel}
+                  </span>
+                ) : null}
                 {pdfFileName ? (
                   <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700">
                     PDF: {pdfFileName}
@@ -302,13 +297,13 @@ export default function App() {
                   setInputValue(event.target.value);
                   setError(null);
                 }}
-                placeholder="Paste text, article URL, or upload a PDF"
+                placeholder="Paste your text here or drop a PDF"
                 className="mt-4 min-h-[280px] w-full resize-y rounded-[1.5rem] border border-pink-200 bg-white px-4 py-4 text-base leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-100"
               />
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
                 <span>{inputValue.trim().length.toLocaleString()} characters</span>
-                <span>{isPdfProcessing ? "Processing PDF..." : "Ready for text, URL, or PDF"}</span>
+                <span>{isPdfProcessing ? "Processing PDF..." : "Ready"}</span>
               </div>
             </div>
           </div>
@@ -321,9 +316,6 @@ export default function App() {
                 <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-700">
                   Generate Summary
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  Pick a mode, check the estimate, and generate a concise summary.
-                </p>
               </div>
               <button
                 type="button"
@@ -384,9 +376,6 @@ export default function App() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-700">Ask a follow-up</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Keep the conversation going with questions about the generated summary.
-              </p>
             </div>
           </div>
 
@@ -398,11 +387,6 @@ export default function App() {
               className="min-h-[120px] w-full resize-y rounded-[1.5rem] border border-pink-200 bg-pink-50/60 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-100"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-slate-500">
-                {chatMessages.length > 0
-                  ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"} in this thread`
-                  : "Start a new thread after generating a summary."}
-              </span>
               <button
                 type="submit"
                 disabled={isSendingChat || !hasSummary}
@@ -431,9 +415,9 @@ export default function App() {
                 </div>
               ))
             ) : (
-              <p className="rounded-2xl border border-dashed border-pink-200 bg-pink-50/40 px-4 py-3 text-sm leading-6 text-slate-500">
-                No follow-up question yet. Generate a summary first, then ask anything specific.
-              </p>
+              <div className="rounded-2xl border border-dashed border-pink-200 bg-pink-50/40 px-4 py-3 text-sm leading-6 text-slate-500">
+                Ask a question to start the conversation.
+              </div>
             )}
           </div>
         </section>
