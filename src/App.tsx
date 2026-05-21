@@ -267,9 +267,6 @@ export default function App() {
         <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-200">Input</h2>
-              </div>
               <div className="inline-flex flex-wrap gap-2">
                 {sourceLabel ? (
                   <span className="inline-flex rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
@@ -303,7 +300,7 @@ export default function App() {
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-fuchsia-100/70">
                 <span>{inputValue.trim().length.toLocaleString()} characters</span>
-                <span>{isPdfProcessing ? "Processing PDF..." : "Ready"}</span>
+                {isPdfProcessing ? <span>Processing PDF...</span> : null}
               </div>
             </div>
           </div>
@@ -317,14 +314,6 @@ export default function App() {
                   Generate Summary
                 </h2>
               </div>
-              <button
-                type="button"
-                onClick={handleGenerateSummary}
-                disabled={isGenerating || isPdfProcessing}
-                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-400 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(236,72,153,0.35)] transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:bg-slate-500"
-              >
-                {isGenerating ? "Generating..." : "Generate Summary"}
-              </button>
             </div>
 
             <div className="rounded-[1.5rem] border border-fuchsia-400/15 bg-white/6 p-4">
@@ -332,9 +321,6 @@ export default function App() {
                 <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
                 <div className="rounded-2xl border border-fuchsia-400/15 bg-[#1b0917] p-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-200">
-                      Token estimate
-                    </span>
                     <span className="rounded-full bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
                       Input ~{usageEstimate.inputTokens.toLocaleString()}
                     </span>
@@ -348,6 +334,15 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={handleGenerateSummary}
+              disabled={isGenerating || isPdfProcessing}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-400 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(236,72,153,0.35)] transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+            >
+              {isGenerating ? "Generating..." : "Generate Summary"}
+            </button>
 
             {error ? (
               <p className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-100">
@@ -415,9 +410,7 @@ export default function App() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-fuchsia-400/20 bg-white/5 px-4 py-3 text-sm leading-6 text-fuchsia-100/70">
-                Ask a question to start the conversation.
-              </div>
+              <div className="min-h-10" />
             )}
           </div>
         </section>

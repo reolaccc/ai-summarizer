@@ -22,7 +22,7 @@ export function SummaryModeSelector({ value, onChange }: Props) {
                 : "border-fuchsia-400/10 bg-[#240d1f] text-fuchsia-50/90 hover:border-fuchsia-300/20 hover:bg-fuchsia-500/10"
             }`}
           >
-            <div className="text-sm font-semibold">{mode.label}</div>
+            <div className="text-sm font-semibold text-fuchsia-50">{mode.label}</div>
             <div className="mt-1 text-xs leading-5 text-fuchsia-100/60">{mode.description}</div>
           </button>
         );
