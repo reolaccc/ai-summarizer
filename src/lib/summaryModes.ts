@@ -31,7 +31,7 @@ export const SUMMARY_MODES: SummaryModeConfig[] = [
   {
     id: "eli10",
     label: "Explain Like I'm 10",
-    description: "Simple, friendly, with examples.",
+    description: "Simple, friendly, concrete examples.",
     outputType: "paragraph",
     estimatedOutputTokens: 220,
   },

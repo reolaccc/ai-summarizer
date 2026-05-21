@@ -34,7 +34,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Explain Like I'm 10",
     summaryType: "paragraph",
     instructions:
-      "Explain the content in very simple language, as if speaking to a 10-year-old. Use plain words, gentle examples, and one simple analogy if it helps. Aim for 2 short paragraphs so the explanation feels friendly, clear, and not too brief.",
+      "Explain the content in very simple language, as if speaking to a curious 10-year-old. Do not just simplify the wording; make the idea concrete and easy to picture. Use plain words, a warm friendly tone, and include at least one everyday example or simple analogy. Aim for 2 short paragraphs so the explanation feels helpful, clear, and not too brief.",
   },
 };
 
