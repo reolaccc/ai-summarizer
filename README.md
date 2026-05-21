@@ -7,7 +7,7 @@ A small React + Vite + TypeScript demo for summarizing text, URLs, and PDF files
 - Unified input for text, article URL, or PDF
 - Summary modes: Standard Summary, Key Insights, Explain Like I'm 10
 - PDF upload with drag-and-drop inside the input area
-- Follow-up questions generated from the content
+- Chat-style follow-up questions after the summary
 - Token and cost estimator before sending requests
 - Copy summary, export Markdown, export plain text
 - Small monthly spend guard in the backend

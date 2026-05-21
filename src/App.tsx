@@ -1,8 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { EstimatorCard } from "./components/EstimatorCard";
 import { FileDropzone } from "./components/FileDropzone";
-import { QuestionsCard, SummaryCard } from "./components/ResultCards";
-import { SelectedModeChip, SummaryModeSelector } from "./components/SummaryModeSelector";
+import { SummaryCard } from "./components/ResultCards";
+import { SummaryModeSelector } from "./components/SummaryModeSelector";
 import {
   buildMarkdownExport,
   buildPlainTextExport,
@@ -52,9 +51,11 @@ export default function App() {
   const selectedMode = getSummaryMode(summaryMode);
   const usageEstimate = useMemo(() => getUsageEstimate(inputValue, summaryMode), [inputValue, summaryMode]);
   const hasSummary = Boolean(summary);
+  const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "Paste text, article URL, or upload a PDF");
 
   async function handlePdfFileSelected(file: File) {
     setError(null);
+
     if (!file.name.toLowerCase().endsWith(".pdf")) {
       setError("Please upload a PDF file.");
       return;
@@ -249,51 +250,46 @@ export default function App() {
     }
   }
 
-  const emptyQuestions = summary?.questions ?? [];
-  const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "Paste text, article URL, or upload a PDF");
-
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#eff6ff_0%,_#f8fafc_38%,_#ffffff_100%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fce7f3_0%,_#fff1f8_34%,_#ffffff_72%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-sm backdrop-blur">
-          <div className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+        <header className="rounded-[2rem] border border-pink-200/80 bg-white/90 p-6 shadow-sm backdrop-blur">
+          <div className="inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-700">
             AI Summarizer
           </div>
           <div className="mt-4 max-w-3xl">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-4xl font-black tracking-tight text-fuchsia-950 drop-shadow-sm sm:text-6xl">
               Turn long content into clear summaries, fast.
             </h1>
-            <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">
+            <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
               Paste text, article URL, or upload a PDF. Keep the interface simple, with just enough structure to get
               to the answer quickly.
             </p>
           </div>
         </header>
 
-        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur">
+        <section className="rounded-[2rem] border border-pink-200/80 bg-white/90 p-5 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  Input
-                </h2>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-700">Input</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   Paste text, article URL, or upload a PDF.
                 </p>
               </div>
               <div className="inline-flex flex-wrap gap-2">
-                <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                <span className="inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-700">
                   {sourceLabel}
                 </span>
                 {pdfFileName ? (
-                  <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+                  <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700">
                     PDF: {pdfFileName}
                   </span>
                 ) : null}
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-[1.75rem] border border-pink-100 bg-pink-50/60 p-4">
               <FileDropzone
                 onPdfFileSelected={handlePdfFileSelected}
                 isProcessing={isPdfProcessing}
@@ -307,7 +303,7 @@ export default function App() {
                   setError(null);
                 }}
                 placeholder="Paste text, article URL, or upload a PDF"
-                className="mt-4 min-h-[280px] w-full resize-y rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 text-base leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                className="mt-4 min-h-[280px] w-full resize-y rounded-[1.5rem] border border-pink-200 bg-white px-4 py-4 text-base leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-100"
               />
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
@@ -315,46 +311,61 @@ export default function App() {
                 <span>{isPdfProcessing ? "Processing PDF..." : "Ready for text, URL, or PDF"}</span>
               </div>
             </div>
-
-            <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Generate Summary</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Review the estimated token usage and cost, then generate a concise summary in the selected mode.
-              </p>
+        <section className="rounded-[2rem] border border-pink-200/80 bg-white/90 p-5 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-700">
+                  Generate Summary
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                  Pick a mode, check the estimate, and generate a concise summary.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateSummary}
+                disabled={isGenerating || isPdfProcessing}
+                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-400 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {isGenerating ? "Generating..." : "Generate Summary"}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleGenerateSummary}
-              disabled={isGenerating || isPdfProcessing}
-              className="inline-flex items-center justify-center rounded-2xl bg-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isGenerating ? "Generating..." : "Generate Summary"}
-            </button>
-          </div>
+            <div className="rounded-[1.5rem] border border-pink-100 bg-pink-50/70 p-4">
+              <div className="flex flex-col gap-4">
+                <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
+                <div className="rounded-2xl border border-pink-100 bg-white/90 p-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-700">
+                      Token estimate
+                    </span>
+                    <span className="rounded-full bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-800">
+                      Input ~{usageEstimate.inputTokens.toLocaleString()}
+                    </span>
+                    <span className="rounded-full bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-800">
+                      Output ~{usageEstimate.outputTokens.toLocaleString()}
+                    </span>
+                    <span className="rounded-full bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-800">
+                      Cost ~${usageEstimate.estimatedCost.toFixed(4)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <div className="mt-4">
-            <EstimatorCard
-              inputTokens={usageEstimate.inputTokens}
-              outputTokens={usageEstimate.outputTokens}
-              estimatedCost={usageEstimate.estimatedCost}
-            />
+            {error ? (
+              <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+                {error}
+              </p>
+            ) : null}
           </div>
-
-          {error ? (
-            <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
-              {error}
-            </p>
-          ) : null}
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr]">
+        <section>
           <SummaryCard
             modeLabel={summary?.modeLabel ?? selectedMode.label}
             sourceLabel={summary?.sourceLabel ?? null}
@@ -367,19 +378,16 @@ export default function App() {
             onExportText={handleExportText}
             canCopy={hasSummary}
           />
-
-          <QuestionsCard questions={emptyQuestions} />
         </section>
 
-        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur">
+        <section className="rounded-[2rem] border border-pink-200/80 bg-white/90 p-5 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Ask a follow-up</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-fuchsia-700">Ask a follow-up</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Keep the conversation going with questions about the generated summary.
               </p>
             </div>
-            <SelectedModeChip value={summaryMode} />
           </div>
 
           <form className="mt-4 flex flex-col gap-3" onSubmit={handleSendChat}>
@@ -387,16 +395,18 @@ export default function App() {
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
               placeholder="Ask a question about the summary..."
-              className="min-h-[120px] w-full resize-y rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+              className="min-h-[120px] w-full resize-y rounded-[1.5rem] border border-pink-200 bg-pink-50/60 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-100"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs text-slate-500">
-                {chatMessages.length > 0 ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"} in this thread` : "Start a new thread after generating a summary."}
+                {chatMessages.length > 0
+                  ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"} in this thread`
+                  : "Start a new thread after generating a summary."}
               </span>
               <button
                 type="submit"
                 disabled={isSendingChat || !hasSummary}
-                className="inline-flex items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                className="inline-flex items-center justify-center rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-5 py-3 text-sm font-semibold text-fuchsia-800 transition hover:border-fuchsia-300 hover:bg-fuchsia-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
               >
                 {isSendingChat ? "Thinking..." : "Send Question"}
               </button>
@@ -410,7 +420,7 @@ export default function App() {
                   key={`${message.role}-${index}`}
                   className={`rounded-2xl border px-4 py-3 text-sm leading-7 ${
                     message.role === "user"
-                      ? "border-sky-200 bg-sky-50 text-sky-900"
+                      ? "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-950"
                       : "border-slate-200 bg-white text-slate-700"
                   }`}
                 >
@@ -421,7 +431,7 @@ export default function App() {
                 </div>
               ))
             ) : (
-              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
+              <p className="rounded-2xl border border-dashed border-pink-200 bg-pink-50/40 px-4 py-3 text-sm leading-6 text-slate-500">
                 No follow-up question yet. Generate a summary first, then ask anything specific.
               </p>
             )}
