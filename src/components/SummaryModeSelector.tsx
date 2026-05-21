@@ -7,7 +7,7 @@ type Props = {
 
 export function SummaryModeSelector({ value, onChange }: Props) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-2 sm:grid-cols-3">
       {SUMMARY_MODES.map((mode) => {
         const active = mode.id === value;
 
@@ -18,12 +18,12 @@ export function SummaryModeSelector({ value, onChange }: Props) {
             onClick={() => onChange(mode.id)}
             className={`rounded-2xl border px-4 py-3 text-left transition ${
               active
-                ? "border-cyan-400 bg-cyan-400/15 text-cyan-50"
-                : "border-white/10 bg-slate-900/70 text-slate-200 hover:border-white/20 hover:bg-slate-900"
+                ? "border-sky-300 bg-sky-50 text-sky-900 shadow-sm"
+                : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50"
             }`}
           >
             <div className="text-sm font-semibold">{mode.label}</div>
-            <div className="mt-1 text-xs leading-5 text-slate-400">{mode.description}</div>
+            <div className="mt-1 text-xs leading-5 text-slate-500">{mode.description}</div>
           </button>
         );
       })}
@@ -35,7 +35,7 @@ export function SelectedModeChip({ value }: { value: SummaryModeId }) {
   const mode = getSummaryMode(value);
 
   return (
-    <span className="inline-flex rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-100">
+    <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-800">
       {mode.label}
     </span>
   );

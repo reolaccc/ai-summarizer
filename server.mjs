@@ -20,27 +20,15 @@ const MODEL_PRICING = {
 const SUMMARY_MODE_PROMPTS = {
   standard: {
     label: "Standard Summary",
-    summaryType: "paragraph",
-    instructions:
-      "Write a balanced, readable summary in 3 to 4 concise sentences. Keep the tone neutral and clear.",
-  },
-  bullet_points: {
-    label: "Bullet Points",
     summaryType: "bullets",
     instructions:
-      "Write 4 to 6 concise bullet points that capture the most important facts, ideas, and outcomes.",
+      "Write 4 to 6 concise bullet points that capture the most important facts, ideas, and outcomes. Keep the wording clean and direct.",
   },
   key_insights: {
     label: "Key Insights",
-    summaryType: "bullets",
+    summaryType: "insights",
     instructions:
-      "Write 4 to 6 bullet points focused on implications, patterns, tradeoffs, and the most important takeaways.",
-  },
-  academic: {
-    label: "Academic",
-    summaryType: "paragraph",
-    instructions:
-      "Write a formal academic-style summary using precise language and clear structure. Keep it concise and analytical.",
+      "Write 3 to 5 deeper insights focused on implications, patterns, tradeoffs, assumptions, or second-order effects. Do not paraphrase the source. For each insight, include exactly one reflection question that helps the user think deeper.",
   },
   eli10: {
     label: "Explain Like I'm 10",
@@ -148,10 +136,22 @@ function parseStructuredResponse(outputText) {
   }
 
   const payload = JSON.parse(cleaned.slice(start, end + 1));
-  const summaryType = payload.summaryType === "bullets" ? "bullets" : "paragraph";
+  const summaryType = payload.summaryType === "insights"
+    ? "insights"
+    : payload.summaryType === "paragraph"
+      ? "paragraph"
+      : "bullets";
   const summaryText = typeof payload.summaryText === "string" ? payload.summaryText.trim() : "";
   const summaryBullets = Array.isArray(payload.summaryBullets)
     ? payload.summaryBullets.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+  const insightPairs = Array.isArray(payload.insightPairs)
+    ? payload.insightPairs
+        .map((item) => ({
+          insight: typeof item?.insight === "string" ? item.insight.trim() : "",
+          question: typeof item?.question === "string" ? item.question.trim() : "",
+        }))
+        .filter((item) => item.insight)
     : [];
   const questions = Array.isArray(payload.questions)
     ? payload.questions.map((item) => String(item).trim()).filter(Boolean).slice(0, 3)
@@ -161,22 +161,19 @@ function parseStructuredResponse(outputText) {
     summaryType,
     summaryText,
     summaryBullets,
+    insightPairs,
     questions,
   };
 }
 
 app.post("/api/summarize", async (req, res) => {
-  const inputType = req.body?.inputType === "text" ? "text" : "url";
   const summaryMode = typeof req.body?.summaryMode === "string" ? req.body.summaryMode : "standard";
   const value = typeof req.body?.value === "string" ? req.body.value.trim() : "";
   const modeConfig = getSummaryModeConfig(summaryMode);
 
   if (!value) {
     return res.status(400).json({
-      error:
-        inputType === "url"
-          ? "Please enter a URL before generating a summary."
-          : "Please paste some text before generating a summary.",
+      error: "Please paste text, enter a URL, or upload a PDF before generating a summary.",
     });
   }
 
@@ -193,9 +190,11 @@ app.post("/api/summarize", async (req, res) => {
       ledger.monthKey === currentMonth ? ledger : { monthKey: currentMonth, spentUsd: 0 };
 
     let contextText = value;
-    let sourceLabel = inputType === "url" ? value : "Pasted text";
+    let sourceLabel = "Pasted text";
 
-    if (inputType === "url") {
+    const looksLikeUrl = /^https?:\/\/\S+/i.test(value);
+
+    if (looksLikeUrl) {
       let targetUrl;
 
       try {
@@ -258,10 +257,11 @@ app.post("/api/summarize", async (req, res) => {
         `Mode: ${modeConfig.label}.`,
         modeConfig.instructions,
         "Return valid JSON only, with this exact shape:",
-        '{ "summaryType": "paragraph" | "bullets", "summaryText": "string", "summaryBullets": ["string"], "questions": ["string", "string", "string"] }',
+        '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": ["string"], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
         "If summaryType is bullets, put the main summary in summaryBullets and keep summaryText empty.",
         "If summaryType is paragraph, put the main summary in summaryText and keep summaryBullets empty.",
-        "The questions must be thoughtful, specific to the content, and non-generic.",
+        "If summaryType is insights, fill insightPairs with 3 to 5 items and keep the other summary fields empty.",
+        "The questions field should contain 3 thoughtful follow-up questions unless the mode is insights, in which case the insightPairs already include reflection questions.",
         "Do not include markdown fences, commentary, or any text outside JSON.",
       ].join("\n"),
       input: `Source: ${sourceLabel}\n\nContent:\n${contextText}`,
@@ -289,6 +289,7 @@ app.post("/api/summarize", async (req, res) => {
           : parsed.summaryType === "bullets"
             ? [response.output_text.trim() || "No summary was returned."]
             : [],
+      insightPairs: parsed.insightPairs,
       questions:
         parsed.questions.length > 0
           ? parsed.questions.slice(0, 3)
@@ -337,9 +338,15 @@ app.post("/api/summarize", async (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   const sourceContext = typeof req.body?.sourceContext === "string" ? req.body.sourceContext.trim() : "";
-  const summaryType = req.body?.summaryType === "bullets" ? "bullets" : "paragraph";
+  const summaryType =
+    req.body?.summaryType === "insights"
+      ? "insights"
+      : req.body?.summaryType === "paragraph"
+        ? "paragraph"
+        : "bullets";
   const summaryText = typeof req.body?.summaryText === "string" ? req.body.summaryText.trim() : "";
   const summaryBullets = Array.isArray(req.body?.summaryBullets) ? req.body.summaryBullets : [];
+  const insightPairs = Array.isArray(req.body?.insightPairs) ? req.body.insightPairs : [];
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
 
   if (!sourceContext) {
@@ -388,7 +395,11 @@ app.post("/api/chat", async (req, res) => {
       `Source content:\n${sourceContext}\n\nSummary type: ${summaryType}\n\nSummary:\n${
         summaryType === "bullets"
           ? summaryBullets.map((bullet) => `- ${bullet}`).join("\n")
-          : summaryText
+          : summaryType === "insights"
+            ? insightPairs
+                .map((pair) => `Insight: ${pair?.insight || ""}\nQuestion: ${pair?.question || ""}`)
+                .join("\n\n")
+            : summaryText
       }\n\nConversation:\n${conversationText}\n\nAnswer the user's last question.`,
     );
     const estimatedRequestCost = estimateCostUsd(estimatedInputTokens, 200);
@@ -406,7 +417,11 @@ app.post("/api/chat", async (req, res) => {
       input: `Source content:\n${sourceContext}\n\nSummary type: ${summaryType}\n\nSummary:\n${
         summaryType === "bullets"
           ? summaryBullets.map((bullet) => `- ${bullet}`).join("\n")
-          : summaryText
+          : summaryType === "insights"
+            ? insightPairs
+                .map((pair) => `Insight: ${pair?.insight || ""}\nQuestion: ${pair?.question || ""}`)
+                .join("\n\n")
+            : summaryText
       }\n\nConversation:\n${conversationText}\n\nAnswer the user's last question.`,
     });
 

@@ -1,114 +1,98 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { EstimatorCard } from "./components/EstimatorCard";
 import { FileDropzone } from "./components/FileDropzone";
 import { QuestionsCard, SummaryCard } from "./components/ResultCards";
 import { SelectedModeChip, SummaryModeSelector } from "./components/SummaryModeSelector";
-import { buildMarkdownExport, buildPlainTextExport, copyToClipboard, downloadTextFile } from "./lib/export";
+import {
+  buildMarkdownExport,
+  buildPlainTextExport,
+  buildSummaryClipboardText,
+  copyToClipboard,
+  downloadTextFile,
+} from "./lib/export";
+import { DEFAULT_SUMMARY_MODE, getSummaryMode, type SummaryModeId } from "./lib/summaryModes";
 import { extractPdfText } from "./lib/pdf";
 import { getUsageEstimate } from "./lib/estimate";
-import { DEFAULT_SUMMARY_MODE, getSummaryMode, type SummaryModeId } from "./lib/summaryModes";
 
-type InputType = "text" | "url";
+type SummaryResponse = {
+  modeLabel: string;
+  summaryType: "paragraph" | "bullets" | "insights";
+  summaryText: string;
+  summaryBullets: string[];
+  insightPairs: { insight: string; question: string }[];
+  questions: string[];
+  contextText: string;
+  sourceLabel: string;
+  spend?: {
+    monthKey: string;
+    spentUsd: number;
+    limitUsd: number;
+  };
+};
+
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
-type SummaryType = "paragraph" | "bullets";
-
-type SummarizeResponse = {
-  summaryType?: SummaryType;
-  summaryText?: string;
-  summaryBullets?: string[];
-  questions?: string[];
-  contextText?: string;
-  sourceLabel?: string;
-  error?: string;
-};
-
-type ChatResponse = {
-  answer?: string;
-  error?: string;
-};
+const DEFAULT_TITLE = "AI Summarizer";
 
 export default function App() {
-  const [inputType, setInputType] = useState<InputType>("url");
+  const [inputValue, setInputValue] = useState("");
   const [summaryMode, setSummaryMode] = useState<SummaryModeId>(DEFAULT_SUMMARY_MODE);
-  const [input, setInput] = useState("");
-  const [sourceLabel, setSourceLabel] = useState("");
-  const [sourceContext, setSourceContext] = useState("");
-  const [summaryType, setSummaryType] = useState<SummaryType>("paragraph");
-  const [summaryText, setSummaryText] = useState("");
-  const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
-  const [generatedQuestions, setGeneratedQuestions] = useState<string[]>([]);
-  const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [question, setQuestion] = useState("");
-  const [error, setError] = useState("");
-  const [chatError, setChatError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const [copyMessage, setCopyMessage] = useState("");
+  const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isSendingChat, setIsSendingChat] = useState(false);
 
-  const currentMode = useMemo(() => getSummaryMode(summaryMode), [summaryMode]);
-  const estimator = useMemo(() => getUsageEstimate(input, summaryMode), [input, summaryMode]);
-
-  function clearResults() {
-    setSourceLabel("");
-    setSourceContext("");
-    setSummaryText("");
-    setSummaryBullets([]);
-    setGeneratedQuestions([]);
-    setMessages([]);
-    setChatError("");
-    setCopyMessage("");
-  }
+  const selectedMode = getSummaryMode(summaryMode);
+  const usageEstimate = useMemo(() => getUsageEstimate(inputValue, summaryMode), [inputValue, summaryMode]);
+  const hasSummary = Boolean(summary);
 
   async function handlePdfFileSelected(file: File) {
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    setError(null);
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
       setError("Please upload a PDF file.");
       return;
     }
 
     setIsPdfProcessing(true);
-    setError("");
-    setChatError("");
-    setCopyMessage("");
 
     try {
       const extracted = await extractPdfText(file);
+      const text = extracted.text.trim();
 
-      if (!extracted.text) {
-        setError("No readable text was found in that PDF.");
-        return;
+      if (!text) {
+        throw new Error("No readable text was found in that PDF.");
       }
 
-      setInputType("text");
-      setInput(extracted.text);
-      setPdfFileName(file.name);
-      clearResults();
-    } catch (pdfError) {
-      console.error(pdfError);
-      setError("Failed to read that PDF. Please try another file.");
+      setInputValue(text);
+      setPdfFileName(extracted.fileName);
+      setSummary(null);
+      setChatMessages([]);
+    } catch (uploadError) {
+      const message = uploadError instanceof Error ? uploadError.message : "Unable to parse that PDF.";
+      setError(message);
+      setPdfFileName(null);
     } finally {
       setIsPdfProcessing(false);
     }
   }
 
   async function handleGenerateSummary() {
-    const trimmedInput = input.trim();
+    const content = inputValue.trim();
 
-    if (!trimmedInput) {
-      setError(inputType === "url" ? "Please enter a URL before generating a summary." : "Please paste some text before generating a summary.");
-      clearResults();
+    if (!content) {
+      setError("Paste text, article URL, or upload a PDF before generating a summary.");
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-    setChatError("");
-    setCopyMessage("");
+    setIsGenerating(true);
+    setError(null);
 
     try {
       const response = await fetch("/api/summarize", {
@@ -117,56 +101,114 @@ export default function App() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          inputType,
-          value: trimmedInput,
+          value: content,
           summaryMode,
         }),
       });
 
-      const data = (await response.json()) as SummarizeResponse;
+      const data = (await response.json()) as SummaryResponse & { error?: string };
 
       if (!response.ok) {
-        setError(data.error || "Something went wrong while generating the summary. Please try again.");
-        clearResults();
-        return;
+        throw new Error(data.error || "Something went wrong while generating the summary.");
       }
 
-      setSourceLabel(data.sourceLabel || "");
-      setSourceContext(data.contextText || "");
-      setSummaryType(data.summaryType || "paragraph");
-      setSummaryText(data.summaryText || "");
-      setSummaryBullets(Array.isArray(data.summaryBullets) ? data.summaryBullets : []);
-      setGeneratedQuestions(Array.isArray(data.questions) ? data.questions : []);
-      setMessages([]);
-    } catch (apiError: unknown) {
-      console.error(apiError);
-      setError("Unable to reach the local summarizer service. Please restart the app and try again.");
-      clearResults();
+      setSummary({
+        modeLabel: selectedMode.label,
+        summaryType: data.summaryType,
+        summaryText: data.summaryText,
+        summaryBullets: Array.isArray(data.summaryBullets) ? data.summaryBullets : [],
+        insightPairs: Array.isArray(data.insightPairs) ? data.insightPairs : [],
+        questions: Array.isArray(data.questions) ? data.questions.slice(0, 3) : [],
+        contextText: data.contextText,
+        sourceLabel: data.sourceLabel,
+        spend: data.spend,
+      });
+      setChatMessages([]);
+      setChatInput("");
+    } catch (summaryError) {
+      const message = summaryError instanceof Error ? summaryError.message : "Something went wrong while generating the summary.";
+      setError(message);
+      setSummary(null);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   }
 
-  async function handleAskQuestion() {
-    const trimmedQuestion = question.trim();
-
-    if (!trimmedQuestion) {
-      setChatError("Please type a question first.");
+  async function handleCopySummary() {
+    if (!summary) {
       return;
     }
 
-    if (!sourceContext) {
-      setChatError("Please generate a summary first so I have content context.");
+    await copyToClipboard(
+      buildSummaryClipboardText({
+        title: DEFAULT_TITLE,
+        summaryLabel: summary.modeLabel,
+        summaryType: summary.summaryType,
+        summaryText: summary.summaryText,
+        summaryBullets: summary.summaryBullets,
+        insightPairs: summary.insightPairs,
+      }),
+    );
+  }
+
+  function handleExportMarkdown() {
+    if (!summary) {
       return;
     }
 
-    setIsChatLoading(true);
-    setChatError("");
-    setCopyMessage("");
+    downloadTextFile(
+      "ai-summary.md",
+      buildMarkdownExport({
+        title: DEFAULT_TITLE,
+        summaryLabel: summary.modeLabel,
+        summaryType: summary.summaryType,
+        summaryText: summary.summaryText,
+        summaryBullets: summary.summaryBullets,
+        insightPairs: summary.insightPairs,
+        questions: summary.questions,
+      }),
+    );
+  }
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmedQuestion }];
-    setMessages(nextMessages);
-    setQuestion("");
+  function handleExportText() {
+    if (!summary) {
+      return;
+    }
+
+    downloadTextFile(
+      "ai-summary.txt",
+      buildPlainTextExport({
+        title: DEFAULT_TITLE,
+        summaryLabel: summary.modeLabel,
+        summaryType: summary.summaryType,
+        summaryText: summary.summaryText,
+        summaryBullets: summary.summaryBullets,
+        insightPairs: summary.insightPairs,
+        questions: summary.questions,
+      }),
+    );
+  }
+
+  async function handleSendChat(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!summary) {
+      setError("Generate a summary first so I have context for follow-up questions.");
+      return;
+    }
+
+    const question = chatInput.trim();
+    if (!question) {
+      setError("Type a question before sending.");
+      return;
+    }
+
+    setIsSendingChat(true);
+    setError(null);
+
+    const nextMessages: ChatMessage[] = [...chatMessages, { role: "user", content: question }];
+    setChatMessages(nextMessages);
+    setChatInput("");
 
     try {
       const response = await fetch("/api/chat", {
@@ -175,278 +217,214 @@ export default function App() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          sourceContext,
-          summaryType,
-          summaryText,
-          summaryBullets,
+          sourceContext: summary.contextText,
+          summaryType: summary.summaryType,
+          summaryText: summary.summaryText,
+          summaryBullets: summary.summaryBullets,
+          insightPairs: summary.insightPairs,
           messages: nextMessages,
         }),
       });
 
-      const data = (await response.json()) as ChatResponse;
+      const data = (await response.json()) as { answer?: string; error?: string };
 
       if (!response.ok) {
-        setChatError(data.error || "Something went wrong while answering the question.");
-        return;
+        throw new Error(data.error || "Unable to answer that question right now.");
       }
 
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", content: data.answer || "No answer was returned." },
+      setChatMessages([
+        ...nextMessages,
+        {
+          role: "assistant",
+          content:
+            data.answer ||
+            "I could not generate a response for that question, but the source may still contain the answer.",
+        },
       ]);
-    } catch (chatApiError: unknown) {
-      console.error(chatApiError);
-      setChatError("Unable to reach the local chat service. Please try again.");
+    } catch (chatError) {
+      const message = chatError instanceof Error ? chatError.message : "Unable to answer that question right now.";
+      setError(message);
     } finally {
-      setIsChatLoading(false);
+      setIsSendingChat(false);
     }
   }
 
-  async function handleCopySummary() {
-    const content = buildPlainTextExport({
-      title: sourceLabel || "AI Summarizer",
-      summaryLabel: currentMode.label,
-      summaryType,
-      summaryText,
-      summaryBullets,
-      questions: generatedQuestions,
-    });
-
-    try {
-      await copyToClipboard(content);
-      setCopyMessage("Copied to clipboard.");
-    } catch (copyError) {
-      console.error(copyError);
-      setCopyMessage("Copy failed. Please try again.");
-    }
-  }
-
-  function handleExportMarkdown() {
-    const content = buildMarkdownExport({
-      title: sourceLabel || "AI Summarizer",
-      summaryLabel: currentMode.label,
-      summaryType,
-      summaryText,
-      summaryBullets,
-      questions: generatedQuestions,
-    });
-
-    downloadTextFile("ai-summarizer-summary.md", content);
-  }
-
-  function handleExportText() {
-    const content = buildPlainTextExport({
-      title: sourceLabel || "AI Summarizer",
-      summaryLabel: currentMode.label,
-      summaryType,
-      summaryText,
-      summaryBullets,
-      questions: generatedQuestions,
-    });
-
-    downloadTextFile("ai-summarizer-summary.txt", content);
-  }
-
-  const hasSummary = summaryType === "bullets" ? summaryBullets.length > 0 : Boolean(summaryText);
+  const emptyQuestions = summary?.questions ?? [];
+  const sourceLabel = summary?.sourceLabel ?? (pdfFileName ? pdfFileName : "Paste text, article URL, or upload a PDF");
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 md:py-10">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
-        <section className="w-full rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-2xl shadow-slate-950/40 backdrop-blur md:p-8">
-          <div className="mb-8 text-center">
-            <p className="mb-3 inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
-              AI Summarizer
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Summarize text or a webpage, ask questions, and export the result
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#eff6ff_0%,_#f8fafc_38%,_#ffffff_100%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <header className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-sm backdrop-blur">
+          <div className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+            AI Summarizer
+          </div>
+          <div className="mt-4 max-w-3xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              Turn long content into clear summaries, fast.
             </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-300 md:text-base">
-              Pick a mode, upload a PDF or paste content, then generate a summary and thoughtful follow-up questions.
+            <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">
+              Paste text, article URL, or upload a PDF. Keep the interface simple, with just enough structure to get
+              to the answer quickly.
             </p>
           </div>
+        </header>
 
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-              <span className="rounded-full border border-white/10 bg-slate-900/70 px-3 py-1">
-                Source: {inputType === "url" ? "URL" : "Text"}
-              </span>
-              <span className="rounded-full border border-white/10 bg-slate-900/70 px-3 py-1">
-                Mode: {currentMode.label}
-              </span>
-              <span className="rounded-full border border-white/10 bg-slate-900/70 px-3 py-1">
-                PDF: {pdfFileName ? pdfFileName : "none loaded"}
-              </span>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-4 md:p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Summary Mode</h2>
-                  <p className="mt-2 text-sm text-slate-400">Easy to edit in `src/lib/summaryModes.ts`.</p>
-                </div>
-                <SelectedModeChip value={summaryMode} />
-              </div>
-              <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-4 md:p-5">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="inline-flex rounded-2xl border border-white/10 bg-slate-950/50 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setInputType("url")}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                      inputType === "url" ? "bg-cyan-400 text-slate-950" : "text-slate-300 hover:text-white"
-                    }`}
-                  >
-                    URL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInputType("text")}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                      inputType === "text" ? "bg-cyan-400 text-slate-950" : "text-slate-300 hover:text-white"
-                    }`}
-                  >
-                    Text
-                  </button>
-                </div>
-                <p className="text-xs text-slate-400">
-                  PDF upload fills the text area automatically.
+        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
+                  Input
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Paste text, article URL, or upload a PDF.
                 </p>
               </div>
-
-              <label className="mb-3 block text-sm font-medium text-slate-200" htmlFor="source-input">
-                {inputType === "url" ? "Page URL to summarize" : "Text to summarize"}
-              </label>
-              {inputType === "url" ? (
-                <input
-                  id="source-input"
-                  type="url"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30"
-                  placeholder="https://example.com/article"
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                />
-              ) : (
-                <textarea
-                  id="source-input"
-                  className="min-h-72 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30"
-                  placeholder="Paste your text here..."
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                />
-              )}
-
-              <p className="mt-3 text-xs leading-5 text-slate-400">
-                {inputType === "url"
-                  ? "Only the page you enter will be fetched. Links on that page will not be followed."
-                  : "The text you paste will be summarized directly."}
-              </p>
-
-              <div className="mt-4">
-                <FileDropzone
-                  onPdfFileSelected={handlePdfFileSelected}
-                  isProcessing={isPdfProcessing}
-                  fileName={pdfFileName}
-                />
-              </div>
-
-              <p className="mt-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm leading-6 text-cyan-100">
-                This demo stops at about $7 monthly spend. 我是你们的朋友果子，微信我你们的反馈哦，好评我再追加额度。
-              </p>
-
-              <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-                <EstimatorCard
-                  inputTokens={estimator.inputTokens}
-                  outputTokens={estimator.outputTokens}
-                  estimatedCost={estimator.estimatedCost}
-                />
-
-                <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Actions</h2>
-                  <div className="mt-4 flex flex-col gap-3">
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-400/50"
-                      onClick={handleGenerateSummary}
-                      disabled={isLoading || isPdfProcessing || !input.trim()}
-                    >
-                      {isLoading ? "Generating..." : "Generate Summary"}
-                    </button>
-                    {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-                    {copyMessage ? <p className="text-sm text-cyan-100">{copyMessage}</p> : null}
-                  </div>
-                </div>
+              <div className="inline-flex flex-wrap gap-2">
+                <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                  {sourceLabel}
+                </span>
+                {pdfFileName ? (
+                  <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+                    PDF: {pdfFileName}
+                  </span>
+                ) : null}
               </div>
             </div>
 
-            <SummaryCard
-              modeLabel={currentMode.label}
-              summaryType={summaryType}
-              summaryText={summaryText}
-              summaryBullets={summaryBullets}
-              onCopy={handleCopySummary}
-              onExportMarkdown={handleExportMarkdown}
-              onExportText={handleExportText}
-              canCopy={hasSummary}
-            />
+            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4">
+              <FileDropzone
+                onPdfFileSelected={handlePdfFileSelected}
+                isProcessing={isPdfProcessing}
+                fileName={pdfFileName}
+              />
 
-            <QuestionsCard questions={generatedQuestions} />
+              <textarea
+                value={inputValue}
+                onChange={(event) => {
+                  setInputValue(event.target.value);
+                  setError(null);
+                }}
+                placeholder="Paste text, article URL, or upload a PDF"
+                className="mt-4 min-h-[280px] w-full resize-y rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 text-base leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+              />
 
-            <section className="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Ask a follow-up question
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
-                Ask anything about the current content or summary.
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+                <span>{inputValue.trim().length.toLocaleString()} characters</span>
+                <span>{isPdfProcessing ? "Processing PDF..." : "Ready for text, URL, or PDF"}</span>
+              </div>
+            </div>
+
+            <SummaryModeSelector value={summaryMode} onChange={setSummaryMode} />
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Generate Summary</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Review the estimated token usage and cost, then generate a concise summary in the selected mode.
               </p>
+            </div>
 
-              <div className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-                {messages.length === 0 ? (
-                  <p className="text-sm text-slate-500">Your conversation will appear here.</p>
-                ) : (
-                  messages.map((message, index) => (
-                    <div
-                      key={`${message.role}-${index}`}
-                      className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-6 ${
-                        message.role === "user"
-                          ? "ml-auto bg-cyan-400 text-slate-950"
-                          : "bg-slate-800 text-slate-100"
-                      }`}
-                    >
-                      {message.content}
-                    </div>
-                  ))
-                )}
-              </div>
+            <button
+              type="button"
+              onClick={handleGenerateSummary}
+              disabled={isGenerating || isPdfProcessing}
+              className="inline-flex items-center justify-center rounded-2xl bg-sky-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {isGenerating ? "Generating..." : "Generate Summary"}
+            </button>
+          </div>
 
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="text"
-                  className="flex-1 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30"
-                  placeholder="Ask a question about the content..."
-                  value={question}
-                  onChange={(event) => setQuestion(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      void handleAskQuestion();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-white/50"
-                  onClick={handleAskQuestion}
-                  disabled={isChatLoading || !hasSummary}
+          <div className="mt-4">
+            <EstimatorCard
+              inputTokens={usageEstimate.inputTokens}
+              outputTokens={usageEstimate.outputTokens}
+              estimatedCost={usageEstimate.estimatedCost}
+            />
+          </div>
+
+          {error ? (
+            <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+              {error}
+            </p>
+          ) : null}
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr]">
+          <SummaryCard
+            modeLabel={summary?.modeLabel ?? selectedMode.label}
+            sourceLabel={summary?.sourceLabel ?? null}
+            summaryType={summary?.summaryType ?? "bullets"}
+            summaryText={summary?.summaryText ?? ""}
+            summaryBullets={summary?.summaryBullets ?? []}
+            insightPairs={summary?.insightPairs ?? []}
+            onCopy={handleCopySummary}
+            onExportMarkdown={handleExportMarkdown}
+            onExportText={handleExportText}
+            canCopy={hasSummary}
+          />
+
+          <QuestionsCard questions={emptyQuestions} />
+        </section>
+
+        <section className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Ask a follow-up</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Keep the conversation going with questions about the generated summary.
+              </p>
+            </div>
+            <SelectedModeChip value={summaryMode} />
+          </div>
+
+          <form className="mt-4 flex flex-col gap-3" onSubmit={handleSendChat}>
+            <textarea
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              placeholder="Ask a question about the summary..."
+              className="min-h-[120px] w-full resize-y rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-slate-500">
+                {chatMessages.length > 0 ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"} in this thread` : "Start a new thread after generating a summary."}
+              </span>
+              <button
+                type="submit"
+                disabled={isSendingChat || !hasSummary}
+                className="inline-flex items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                {isSendingChat ? "Thinking..." : "Send Question"}
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-4 space-y-3">
+            {chatMessages.length > 0 ? (
+              chatMessages.map((message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`rounded-2xl border px-4 py-3 text-sm leading-7 ${
+                    message.role === "user"
+                      ? "border-sky-200 bg-sky-50 text-sky-900"
+                      : "border-slate-200 bg-white text-slate-700"
+                  }`}
                 >
-                  {isChatLoading ? "Thinking..." : "Ask"}
-                </button>
-              </div>
-
-              {chatError ? <p className="mt-3 text-sm text-rose-300">{chatError}</p> : null}
-            </section>
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    {message.role === "user" ? "You" : "AI"}
+                  </div>
+                  {message.content}
+                </div>
+              ))
+            ) : (
+              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
+                No follow-up question yet. Generate a summary first, then ask anything specific.
+              </p>
+            )}
           </div>
         </section>
       </div>

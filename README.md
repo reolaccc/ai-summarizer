@@ -4,9 +4,9 @@ A small React + Vite + TypeScript demo for summarizing text, URLs, and PDF files
 
 ## Features
 
-- Text or URL input
-- Summary modes: Standard Summary, Bullet Points, Key Insights, Academic, Explain Like I'm 10
-- PDF upload with drag-and-drop
+- Unified input for text, article URL, or PDF
+- Summary modes: Standard Summary, Key Insights, Explain Like I'm 10
+- PDF upload with drag-and-drop inside the input area
 - Follow-up questions generated from the content
 - Token and cost estimator before sending requests
 - Copy summary, export Markdown, export plain text
@@ -95,12 +95,13 @@ The PDF code is lazy-loaded, so the parser only downloads when someone uploads a
 
 ## How Prompts Are Organized
 
-- Summary mode labels and descriptions live in `src/lib/summaryModes.ts`
+- Summary mode labels, descriptions, and rough token estimates live in `src/lib/summaryModes.ts`
 - Summary prompt behavior is centralized in `server.mjs`
 - The backend returns structured JSON with:
   - `summaryType`
   - `summaryText`
   - `summaryBullets`
+  - `insightPairs`
   - `questions`
 
 If you want to change the actual wording for any mode, edit the summary mode prompt block in `server.mjs`.
@@ -130,3 +131,4 @@ To change how the AI writes each mode, edit:
 - The OpenAI API key stays on the server and is not exposed to the browser.
 - The backend includes a small spend guard that stops new requests when the demo reaches about `$7` in estimated monthly spend.
 - The app preserves the existing chat-style follow-up flow.
+- The main UI intentionally stays bright, minimal, and uncluttered.

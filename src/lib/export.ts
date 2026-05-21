@@ -1,17 +1,31 @@
 type ExportPayload = {
   title: string;
   summaryLabel: string;
-  summaryType: "paragraph" | "bullets";
+  summaryType: "paragraph" | "bullets" | "insights";
   summaryText: string;
   summaryBullets: string[];
+  insightPairs: { insight: string; question: string }[];
   questions: string[];
 };
 
+type SummaryOnlyPayload = Omit<ExportPayload, "questions">;
+
+function buildSummaryLines(payload: SummaryOnlyPayload) {
+  if (payload.summaryType === "bullets") {
+    return payload.summaryBullets.map((item) => `- ${item}`).join("\n");
+  }
+
+  if (payload.summaryType === "insights") {
+    return payload.insightPairs
+      .map((pair) => [`Insight: ${pair.insight}`, `Question: ${pair.question}`].join("\n"))
+      .join("\n\n");
+  }
+
+  return payload.summaryText;
+}
+
 export function buildMarkdownExport(payload: ExportPayload) {
-  const summarySection =
-    payload.summaryType === "bullets"
-      ? payload.summaryBullets.map((item) => `- ${item}`).join("\n")
-      : payload.summaryText;
+  const summarySection = buildSummaryLines(payload);
 
   const questionsSection = payload.questions.map((question) => `- ${question}`).join("\n");
 
@@ -30,10 +44,7 @@ export function buildMarkdownExport(payload: ExportPayload) {
 }
 
 export function buildPlainTextExport(payload: ExportPayload) {
-  const summarySection =
-    payload.summaryType === "bullets"
-      ? payload.summaryBullets.map((item) => `- ${item}`).join("\n")
-      : payload.summaryText;
+  const summarySection = buildSummaryLines(payload);
 
   const questionsSection = payload.questions.map((question) => `- ${question}`).join("\n");
 
@@ -47,6 +58,12 @@ export function buildPlainTextExport(payload: ExportPayload) {
     questionsSection || "No questions available.",
     "",
   ].join("\n");
+}
+
+export function buildSummaryClipboardText(
+  payload: SummaryOnlyPayload,
+) {
+  return buildSummaryLines(payload);
 }
 
 export async function copyToClipboard(text: string) {

@@ -15,7 +15,7 @@ export function FileDropzone({ onPdfFileSelected, isProcessing, fileName }: Prop
       role="button"
       tabIndex={0}
       className={`rounded-3xl border border-dashed p-4 transition focus:outline-none ${
-        isDragActive ? "border-cyan-400 bg-cyan-400/10" : "border-white/15 bg-slate-950/40"
+        isDragActive ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-white"
       }`}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(event) => {
@@ -54,13 +54,13 @@ export function FileDropzone({ onPdfFileSelected, isProcessing, fileName }: Prop
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-slate-100">PDF upload</p>
-          <p className="mt-1 text-sm leading-6 text-slate-400">
+          <p className="text-sm font-semibold text-slate-700">PDF upload</p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
             Drag and drop a PDF here, or click to select a file. The extracted text will populate the input automatically.
           </p>
-          {fileName ? <p className="mt-2 text-xs text-cyan-100">Loaded: {fileName}</p> : null}
+          {fileName ? <p className="mt-2 text-xs text-sky-700">Loaded: {fileName}</p> : null}
         </div>
-        <div className="text-sm text-slate-300">
+        <div className="text-sm text-slate-500">
           {isProcessing ? "Processing PDF..." : "PDF ready"}
         </div>
       </div>
