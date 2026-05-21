@@ -353,7 +353,7 @@ export default function App() {
                   setInputValue(event.target.value);
                   setError(null);
                 }}
-                placeholder="Paste your text here or drop a PDF"
+                placeholder="Paste text / url here or drop a PDF"
                 className="min-h-[150px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-3 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
               />
 
