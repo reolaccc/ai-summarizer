@@ -322,7 +322,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={openPdfPicker}
-                className="crystal-chip rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:opacity-95"
+                className="gold-action-secondary rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition hover:opacity-95"
               >
                 Upload PDF
               </button>
@@ -369,7 +369,7 @@ export default function App() {
               type="button"
               onClick={handleGenerateSummary}
               disabled={isGenerating || isPdfProcessing || isInputTooLarge}
-              className="crystal-action inline-flex w-full items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold text-white transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:opacity-70"
+              className="gold-action inline-flex w-full items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isGenerating ? "Generating..." : "Generate Summary"}
             </button>
@@ -427,7 +427,7 @@ export default function App() {
               <button
                 type="submit"
                 disabled={isSendingChat || !hasSummary}
-                className="crystal-action inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70"
+                className="gold-action inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSendingChat ? "Thinking..." : "Send Question"}
               </button>
