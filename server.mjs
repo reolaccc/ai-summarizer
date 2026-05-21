@@ -251,6 +251,79 @@ function splitBullets(text) {
     .filter(Boolean);
 }
 
+function splitParagraphs(text) {
+  return String(text ?? "")
+    .split(/\n\s*\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
+function splitSentences(text) {
+  const cleaned = String(text ?? "").replace(/\s+/g, " ").trim();
+
+  if (!cleaned) {
+    return [];
+  }
+
+  const matches = cleaned.match(/[^.!?。！？]+[.!?。！？]*/g);
+
+  return (matches ?? [cleaned]).map((sentence) => sentence.trim()).filter(Boolean);
+}
+
+function splitWordsIntoThree(text) {
+  const words = String(text ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return [];
+  }
+
+  const chunkSize = Math.max(1, Math.ceil(words.length / 3));
+  const first = words.slice(0, chunkSize).join(" ");
+  const second = words.slice(chunkSize, chunkSize * 2).join(" ");
+  const third = words.slice(chunkSize * 2).join(" ");
+
+  return [first, second, third].filter(Boolean);
+}
+
+function normalizeEli10Paragraphs(text) {
+  const paragraphBlocks = splitParagraphs(text);
+
+  if (paragraphBlocks.length >= 3) {
+    return paragraphBlocks.slice(0, 3).join("\n\n");
+  }
+
+  const sentenceBlocks = splitSentences(paragraphBlocks.join(" "));
+
+  if (sentenceBlocks.length >= 3) {
+    const base = Math.floor(sentenceBlocks.length / 3);
+    const remainder = sentenceBlocks.length % 3;
+    let cursor = 0;
+
+    const chunks = Array.from({ length: 3 }, (_value, index) => {
+      const take = base + (index < remainder ? 1 : 0);
+      const chunk = sentenceBlocks.slice(cursor, cursor + take);
+      cursor += take;
+      return chunk.join(" ").trim();
+    }).filter(Boolean);
+
+    if (chunks.length === 3) {
+      return chunks.join("\n\n");
+    }
+  }
+
+  const wordChunks = splitWordsIntoThree(sentenceBlocks.join(" "));
+
+  if (wordChunks.length === 3) {
+    return wordChunks.join("\n\n");
+  }
+
+  return paragraphBlocks.join("\n\n") || sentenceBlocks.join(" ");
+}
+
 function cleanAssistantText(text) {
   return String(text ?? "")
     .replace(/\*\*(.*?)\*\*/g, "$1")
@@ -622,6 +695,51 @@ app.post("/api/summarize", async (req, res) => {
     let parsed = parseStructuredResponse(response.output_text);
 
     let extraCost = 0;
+
+    if (summaryMode === "eli10") {
+      const eli10ParagraphCount = splitParagraphs(parsed.summaryText).length;
+
+      if (!useMockResponses && eli10ParagraphCount < 3) {
+        const rewriteResponse = await client.responses.create({
+          model: "gpt-5.4-mini",
+          instructions: [
+            "You are rewriting an ELI10 explanation so it becomes exactly 3 short paragraphs.",
+            "Paragraph 1 should explain what it is.",
+            "Paragraph 2 should give one concrete everyday example or analogy.",
+            "Paragraph 3 should explain why it matters.",
+            "Use a warm, natural, child-friendly tone.",
+            "Do not add bullets, headings, markdown fences, or extra commentary.",
+            "Return valid JSON only with the same shape as before.",
+            '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
+            "Keep summaryType as paragraph and keep summaryBullets empty.",
+          ].join("\n"),
+          input: [
+            `Source: ${sourceLabel}`,
+            "",
+            `Content:\n${contextText}`,
+            "",
+            `Current explanation:\n${parsed.summaryText}`,
+          ].join("\n"),
+        });
+
+        const rewrittenParsed = parseStructuredResponse(rewriteResponse.output_text);
+        parsed = {
+          ...parsed,
+          summaryText: rewrittenParsed.summaryText || parsed.summaryText,
+        };
+
+        const rewriteUsage = extractUsageTokens(rewriteResponse.usage);
+        extraCost +=
+          rewriteUsage.inputTokens > 0 || rewriteUsage.outputTokens > 0
+            ? estimateCostUsd(rewriteUsage.inputTokens, rewriteUsage.outputTokens)
+            : 0;
+      }
+
+      parsed = {
+        ...parsed,
+        summaryText: normalizeEli10Paragraphs(parsed.summaryText),
+      };
+    }
 
     if (!useMockResponses && summaryMode === "standard" && isTooThinStandardSummary(parsed.summaryBullets)) {
       const expansionResponse = await client.responses.create({
