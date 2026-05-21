@@ -1,5 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { FileDropzone } from "./components/FileDropzone";
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { SummaryCard } from "./components/ResultCards";
 import { SummaryModeSelector } from "./components/SummaryModeSelector";
 import {
@@ -42,11 +41,13 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [isInputDragActive, setIsInputDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isSendingChat, setIsSendingChat] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedMode = getSummaryMode(summaryMode);
   const usageEstimate = useMemo(() => getUsageEstimate(inputValue, summaryMode), [inputValue, summaryMode]);
@@ -82,6 +83,20 @@ export default function App() {
     } finally {
       setIsPdfProcessing(false);
     }
+  }
+
+  function openPdfPicker() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleSelectedPdf(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      await handlePdfFileSelected(file);
+    }
+
+    event.target.value = "";
   }
 
   async function handleGenerateSummary() {
@@ -265,28 +280,55 @@ export default function App() {
         </header>
 
         <section className="rounded-[2rem] border border-fuchsia-400/20 bg-white/8 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div className="inline-flex flex-wrap gap-2">
-                {sourceLabel ? (
-                  <span className="inline-flex rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
-                    {sourceLabel}
-                  </span>
-                ) : null}
-                {pdfFileName ? (
-                  <span className="inline-flex rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-100">
-                    PDF: {pdfFileName}
-                  </span>
-                ) : null}
-              </div>
-            </div>
+          <div
+            className={`rounded-[1.75rem] border p-4 transition ${
+              isInputDragActive ? "border-fuchsia-300/35 bg-fuchsia-500/12" : "border-fuchsia-400/15 bg-white/6"
+            }`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsInputDragActive(true);
+            }}
+            onDragLeave={() => setIsInputDragActive(false)}
+            onDrop={async (event) => {
+              event.preventDefault();
+              setIsInputDragActive(false);
 
-            <div className="rounded-[1.75rem] border border-fuchsia-400/15 bg-white/6 p-4">
-              <FileDropzone
-                onPdfFileSelected={handlePdfFileSelected}
-                isProcessing={isPdfProcessing}
-                fileName={pdfFileName}
-              />
+              const file = event.dataTransfer.files[0];
+              if (file) {
+                await handlePdfFileSelected(file);
+              }
+            }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleSelectedPdf}
+            />
+
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex flex-wrap gap-2">
+                  {sourceLabel ? (
+                    <span className="inline-flex rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
+                      {sourceLabel}
+                    </span>
+                  ) : null}
+                  {pdfFileName ? (
+                    <span className="inline-flex rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-100">
+                      PDF: {pdfFileName}
+                    </span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={openPdfPicker}
+                  className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-fuchsia-50 transition hover:bg-fuchsia-500/20"
+                >
+                  Upload PDF
+                </button>
+              </div>
 
               <textarea
                 value={inputValue}
@@ -295,10 +337,10 @@ export default function App() {
                   setError(null);
                 }}
                 placeholder="Paste your text here or drop a PDF"
-                className="mt-4 min-h-[280px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-4 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
+                className="min-h-[280px] w-full resize-y rounded-[1.5rem] border border-fuchsia-400/20 bg-[#180715] px-4 py-4 text-base leading-7 text-fuchsia-50 outline-none transition placeholder:text-fuchsia-200/40 focus:border-fuchsia-300 focus:ring-4 focus:ring-fuchsia-500/20"
               />
 
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-fuchsia-100/70">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-fuchsia-100/70">
                 <span>{inputValue.trim().length.toLocaleString()} characters</span>
                 {isPdfProcessing ? <span>Processing PDF...</span> : null}
               </div>
@@ -385,7 +427,7 @@ export default function App() {
               <button
                 type="submit"
                 disabled={isSendingChat || !hasSummary}
-                className="inline-flex items-center justify-center rounded-2xl border border-fuchsia-300/20 bg-fuchsia-500/10 px-5 py-3 text-sm font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-700 disabled:text-slate-400"
+                className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-400 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(236,72,153,0.35)] transition hover:from-fuchsia-400 hover:via-pink-400 hover:to-rose-300 disabled:cursor-not-allowed disabled:bg-slate-500"
               >
                 {isSendingChat ? "Thinking..." : "Send Question"}
               </button>
