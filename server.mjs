@@ -22,7 +22,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Write 6 to 8 concise bullet points that capture the most important facts, ideas, and outcomes. Keep the wording clean and direct, but include enough detail that the summary feels complete rather than abbreviated.",
+      "Write as many concise bullet points as needed to cover the content thoroughly. For short inputs, use only a few bullets. For longer inputs, include more bullets so the summary feels complete rather than artificially limited. Keep the wording clean and direct.",
   },
   key_insights: {
     label: "Key Insights",
