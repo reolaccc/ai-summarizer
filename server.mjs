@@ -22,7 +22,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Create a structured note outline that captures the content thoroughly. Do not limit the summary to three bullets. For medium or long inputs, aim for about 4 to 7 top-level sections. Each top-level section must be specific, not generic, and should read like a short claim or takeaway rather than a vague label. Under each top-level section, add 2 to 3 nested bullets that include concrete facts, examples, causes, effects, tradeoffs, or why it matters. The goal is a deeper knowledge map, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
+      "Create a structured note outline that captures the content thoroughly. Do not limit the summary to three bullets. Aim for 3 to 5 major sections, with the exact number depending on the source length and complexity. Under each major section, add 5 to 10 detailed bullets when the content supports it. Each detail should try to include a concrete example, effect, cause, implication, or reason why it matters. The goal is a dense knowledge map, not a flat list and not a high-level paraphrase. Keep the wording clean, direct, and information-rich.",
   },
   key_insights: {
     label: "Key Insights",
@@ -166,7 +166,7 @@ function getBulletStats(items) {
 
 function isTooThinStandardSummary(items) {
   const stats = getBulletStats(items);
-  return stats.topLevelCount < 4 || stats.totalCount < 8;
+  return stats.topLevelCount < 3 || stats.totalCount < 12;
 }
 
 function extractUsageTokens(usage) {
@@ -348,9 +348,9 @@ app.post("/api/summarize", async (req, res) => {
           "You are expanding a standard summary that is too short.",
           "Rewrite it into a richer knowledge map with more concrete information.",
           "Do not limit it to three bullets.",
-          "Use at least 4 top-level sections for medium or long content, and 8 to 12 total bullet nodes when the source has enough detail.",
-          "Each top-level section must be specific and informative, not generic.",
-          "Under each top-level section, add 1 to 3 nested bullets with concrete facts, examples, causes, effects, tradeoffs, or why it matters.",
+          "Use 3 to 5 major sections for medium or long content when the source has enough detail.",
+          "Under each major section, add 5 to 10 detailed bullets when the source supports that level of depth.",
+          "Each detail must be concrete and should try to include an example, cause, effect, implication, or why it matters.",
           "Return valid JSON only with the same shape as before.",
           '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
           "Keep summaryType as bullets and keep summaryText empty.",
