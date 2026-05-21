@@ -49,13 +49,42 @@ function extractReadableText(html) {
 
   $("script, style, noscript, svg, iframe, footer, nav, aside").remove();
 
+  const compact = (value) => value.replace(/\s+/g, " ").trim();
+  const firstMeta = (...selectors) =>
+    selectors
+      .map((selector) => $(selector).first().attr("content")?.trim())
+      .find((value) => Boolean(value));
+  const gatherText = (selector) =>
+    $(selector)
+      .toArray()
+      .map((element) => compact($(element).text()))
+      .filter(Boolean);
+
   const title =
-    $("title").first().text().trim() || $("h1").first().text().trim() || "Untitled page";
+    compact($("title").first().text()) ||
+    compact(firstMeta('meta[property="og:title"]', 'meta[name="twitter:title"]', 'meta[name="title"]') || "") ||
+    compact($("h1").first().text()) ||
+    "Untitled page";
 
   const article = $("article").first();
   const main = $("main").first();
   const contentRoot = article.length > 0 ? article : main.length > 0 ? main : $("body");
-  const text = contentRoot.text().replace(/\s+/g, " ").trim();
+  const primaryText = compact(contentRoot.text());
+  const secondaryText = [
+    ...gatherText("h1, h2, h3, h4"),
+    ...gatherText("p"),
+    ...gatherText("li"),
+    ...gatherText("blockquote"),
+    ...gatherText("figcaption"),
+  ].join(" ").trim();
+  const metaText = compact(
+    firstMeta(
+      'meta[property="og:description"]',
+      'meta[name="description"]',
+      'meta[name="twitter:description"]',
+    ) || "",
+  );
+  const text = [primaryText, secondaryText, metaText].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
   return { title, text };
 }
@@ -231,7 +260,8 @@ app.post("/api/summarize", async (req, res) => {
 
       if (!trimmedText) {
         return res.status(400).json({
-          error: "No readable text was found on that page.",
+          error:
+            "No readable text was found on that page. The site may be JavaScript-rendered, image-based, or blocked for server-side fetches.",
         });
       }
 
