@@ -22,7 +22,7 @@ const SUMMARY_MODE_PROMPTS = {
     label: "Standard Summary",
     summaryType: "bullets",
     instructions:
-      "Write as many concise bullet points as needed to cover the content thoroughly. For short inputs, use only a few bullets. For longer inputs, include more bullets so the summary feels complete rather than artificially limited. Keep the wording clean and direct.",
+      "Create a structured bullet outline that captures the content thoroughly. Do not limit the summary to three bullets. For medium or long inputs, aim for about 5 to 8 top-level ideas, then add 1 to 3 nested child bullets when a point needs support, examples, caveats, or details. Aim for a clear hierarchy, like a simple knowledge map, not a flat list. Keep the wording clean and direct.",
   },
   key_insights: {
     label: "Key Insights",
@@ -129,6 +129,32 @@ function estimateCostUsd(inputTokens, outputTokens) {
   );
 }
 
+function normalizeBulletNodes(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item) => {
+      if (typeof item === "string") {
+        return { text: item.trim(), level: 0 };
+      }
+
+      const text = typeof item?.text === "string" ? item.text.trim() : "";
+      const rawLevel = typeof item?.level === "number" ? item.level : 0;
+      const level = Number.isFinite(rawLevel) ? Math.max(0, Math.min(3, Math.floor(rawLevel))) : 0;
+
+      return { text, level };
+    })
+    .filter((item) => item.text);
+}
+
+function formatBulletNodes(items) {
+  return normalizeBulletNodes(items)
+    .map((item) => `${"  ".repeat(item.level)}- ${item.text}`)
+    .join("\n");
+}
+
 function extractUsageTokens(usage) {
   if (!usage || typeof usage !== "object") {
     return { inputTokens: 0, outputTokens: 0 };
@@ -172,7 +198,7 @@ function parseStructuredResponse(outputText) {
       : "bullets";
   const summaryText = typeof payload.summaryText === "string" ? payload.summaryText.trim() : "";
   const summaryBullets = Array.isArray(payload.summaryBullets)
-    ? payload.summaryBullets.map((item) => String(item).trim()).filter(Boolean)
+    ? normalizeBulletNodes(payload.summaryBullets)
     : [];
   const insightPairs = Array.isArray(payload.insightPairs)
     ? payload.insightPairs
@@ -287,7 +313,7 @@ app.post("/api/summarize", async (req, res) => {
         `Mode: ${modeConfig.label}.`,
         modeConfig.instructions,
         "Return valid JSON only, with this exact shape:",
-        '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": ["string"], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
+        '{ "summaryType": "bullets" | "paragraph" | "insights", "summaryText": "string", "summaryBullets": [{"text":"string","level":0}], "insightPairs": [{"insight":"string","question":"string"}], "questions": ["string", "string", "string"] }',
         "If summaryType is bullets, put the main summary in summaryBullets and keep summaryText empty.",
         "If summaryType is paragraph, put the main summary in summaryText and keep summaryBullets empty.",
         "If summaryType is insights, fill insightPairs with 3 to 5 items and keep the other summary fields empty.",
@@ -317,7 +343,7 @@ app.post("/api/summarize", async (req, res) => {
         parsed.summaryBullets.length > 0
           ? parsed.summaryBullets
           : parsed.summaryType === "bullets"
-            ? [response.output_text.trim() || "No summary was returned."]
+            ? [{ text: response.output_text.trim() || "No summary was returned.", level: 0 }]
             : [],
       insightPairs: parsed.insightPairs,
       questions:
@@ -424,7 +450,7 @@ app.post("/api/chat", async (req, res) => {
     const estimatedInputTokens = estimateTokens(
       `Source content:\n${sourceContext}\n\nSummary type: ${summaryType}\n\nSummary:\n${
         summaryType === "bullets"
-          ? summaryBullets.map((bullet) => `- ${bullet}`).join("\n")
+          ? formatBulletNodes(summaryBullets)
           : summaryType === "insights"
             ? insightPairs
                 .map((pair) => `Insight: ${pair?.insight || ""}\nQuestion: ${pair?.question || ""}`)
@@ -446,7 +472,7 @@ app.post("/api/chat", async (req, res) => {
         "You answer questions about the provided source content. Keep the answer short, useful, and in bullet points. If the question is not answerable from the content, say so briefly.",
       input: `Source content:\n${sourceContext}\n\nSummary type: ${summaryType}\n\nSummary:\n${
         summaryType === "bullets"
-          ? summaryBullets.map((bullet) => `- ${bullet}`).join("\n")
+          ? formatBulletNodes(summaryBullets)
           : summaryType === "insights"
             ? insightPairs
                 .map((pair) => `Insight: ${pair?.insight || ""}\nQuestion: ${pair?.question || ""}`)

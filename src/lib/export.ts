@@ -1,9 +1,11 @@
+import { formatBulletNodes, type BulletNode } from "./bullets";
+
 type ExportPayload = {
   title: string;
   summaryLabel: string;
   summaryType: "paragraph" | "bullets" | "insights";
   summaryText: string;
-  summaryBullets: string[];
+  summaryBullets: BulletNode[];
   insightPairs: { insight: string; question: string }[];
   questions: string[];
 };
@@ -12,7 +14,7 @@ type SummaryOnlyPayload = Omit<ExportPayload, "questions">;
 
 function buildSummaryLines(payload: SummaryOnlyPayload) {
   if (payload.summaryType === "bullets") {
-    return payload.summaryBullets.map((item) => `- ${item}`).join("\n");
+    return formatBulletNodes(payload.summaryBullets);
   }
 
   if (payload.summaryType === "insights") {

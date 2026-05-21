@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { SummaryCard } from "./components/ResultCards";
 import { SummaryModeSelector } from "./components/SummaryModeSelector";
+import { type BulletNode } from "./lib/bullets";
 import {
   buildMarkdownExport,
   buildPlainTextExport,
@@ -16,7 +17,7 @@ type SummaryResponse = {
   modeLabel: string;
   summaryType: "paragraph" | "bullets" | "insights";
   summaryText: string;
-  summaryBullets: string[];
+  summaryBullets: BulletNode[];
   insightPairs: { insight: string; question: string }[];
   questions: string[];
   contextText: string;
@@ -132,7 +133,14 @@ export default function App() {
         modeLabel: selectedMode.label,
         summaryType: data.summaryType,
         summaryText: data.summaryText,
-        summaryBullets: Array.isArray(data.summaryBullets) ? data.summaryBullets : [],
+        summaryBullets: Array.isArray(data.summaryBullets)
+          ? data.summaryBullets
+              .map((item) => ({
+                text: typeof item?.text === "string" ? item.text.trim() : String(item ?? "").trim(),
+                level: Number.isFinite(item?.level) ? Math.max(0, Math.min(3, Math.floor(item.level))) : 0,
+              }))
+              .filter((item) => item.text)
+          : [],
         insightPairs: Array.isArray(data.insightPairs) ? data.insightPairs : [],
         questions: Array.isArray(data.questions) ? data.questions.slice(0, 3) : [],
         contextText: data.contextText,

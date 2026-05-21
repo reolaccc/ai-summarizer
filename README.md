@@ -72,6 +72,7 @@ http://localhost:5173
 │   │   ├── ResultCards.tsx
 │   │   └── SummaryModeSelector.tsx
 │   └── lib
+│       ├── bullets.ts
 │       ├── estimate.ts
 │       ├── export.ts
 │       ├── pdf.ts
@@ -105,6 +106,7 @@ The PDF code is lazy-loaded, so the parser only downloads when someone uploads a
   - `questions`
 
 If you want to change the actual wording for any mode, edit the summary mode prompt block in `server.mjs`.
+Standard Summary now returns a hierarchical bullet outline instead of a flat three-item list.
 
 ## Token Estimation
 

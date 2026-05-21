@@ -1,9 +1,11 @@
+import { buildBulletTree, type BulletNode } from "../lib/bullets";
+
 type SummaryProps = {
   modeLabel: string;
   sourceLabel?: string | null;
   summaryType: "paragraph" | "bullets" | "insights";
   summaryText: string;
-  summaryBullets: string[];
+  summaryBullets: BulletNode[];
   insightPairs: { insight: string; question: string }[];
   onCopy: () => void;
   onExportMarkdown: () => void;
@@ -29,6 +31,8 @@ export function SummaryCard({
       : summaryType === "insights"
         ? insightPairs.length > 0
         : Boolean(summaryText.trim());
+
+  const bulletTree = buildBulletTree(summaryBullets);
 
   return (
     <section className="rounded-3xl border border-fuchsia-400/20 bg-[#170613]/85 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.22)] backdrop-blur">
@@ -68,11 +72,11 @@ export function SummaryCard({
 
       <div className="mt-4 rounded-2xl border border-fuchsia-400/10 bg-[#240d1f] p-4">
         {hasSummaryContent && summaryType === "bullets" ? (
-          <ul className="list-disc space-y-3 pl-5 text-sm leading-7 text-fuchsia-50/90 md:text-base">
-            {summaryBullets.map((bullet, index) => (
-              <li key={`${bullet}-${index}`}>{bullet}</li>
+          <div className="space-y-3">
+            {bulletTree.map((item, index) => (
+              <BulletTreeItem key={`${item.text}-${index}`} node={item} />
             ))}
-          </ul>
+          </div>
         ) : hasSummaryContent && summaryType === "insights" ? (
           <div className="space-y-3">
             {insightPairs.map((pair, index) => (
@@ -93,5 +97,37 @@ export function SummaryCard({
         )}
       </div>
     </section>
+  );
+}
+
+function BulletTreeItem({ node }: { node: ReturnType<typeof buildBulletTree>[number] }) {
+  const padding = Math.min(node.level, 3) * 16;
+
+  return (
+    <div className="rounded-2xl border border-fuchsia-400/10 bg-[#1b0917] px-4 py-3" style={{ marginLeft: padding }}>
+      <div className="flex gap-3">
+        <span
+          className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+            node.level === 0 ? "bg-fuchsia-300" : node.level === 1 ? "bg-fuchsia-400" : "bg-rose-300"
+          }`}
+        />
+        <div className="min-w-0 flex-1">
+          <p
+            className={`leading-7 text-fuchsia-50/90 ${
+              node.level === 0 ? "text-sm font-semibold md:text-[15px]" : "text-sm md:text-[14px]"
+            }`}
+          >
+            {node.text}
+          </p>
+          {node.children.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {node.children.map((child, index) => (
+                <BulletTreeItem key={`${child.text}-${index}`} node={child} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
