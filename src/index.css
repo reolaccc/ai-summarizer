@@ -15,11 +15,11 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top, rgba(236, 72, 153, 0.28) 0%, rgba(236, 72, 153, 0) 28%),
-    radial-gradient(circle at 18% 18%, rgba(192, 132, 252, 0.3) 0%, rgba(192, 132, 252, 0) 22%),
-    radial-gradient(circle at 82% 0%, rgba(168, 85, 247, 0.24) 0%, rgba(168, 85, 247, 0) 24%),
-    radial-gradient(circle at 65% 18%, rgba(244, 114, 182, 0.24) 0%, rgba(244, 114, 182, 0) 20%),
-    linear-gradient(180deg, #fff8fd 0%, #ffeaf6 18%, #f9d4ec 48%, #6a1a4b 100%);
+    radial-gradient(circle at top, rgba(236, 72, 153, 0.36) 0%, rgba(236, 72, 153, 0) 28%),
+    radial-gradient(circle at 18% 18%, rgba(216, 180, 254, 0.36) 0%, rgba(216, 180, 254, 0) 22%),
+    radial-gradient(circle at 82% 0%, rgba(192, 132, 252, 0.28) 0%, rgba(192, 132, 252, 0) 24%),
+    radial-gradient(circle at 65% 18%, rgba(244, 114, 182, 0.34) 0%, rgba(244, 114, 182, 0) 20%),
+    linear-gradient(180deg, #fff8fe 0%, #ffe4f6 16%, #f7cfee 44%, #671847 100%);
   color: #f8fafc;
   background-attachment: fixed;
 }
@@ -39,15 +39,15 @@ body {
     border: 1px solid transparent;
     border-radius: 1.75rem;
     background:
-      linear-gradient(180deg, rgba(47, 12, 41, 0.9), rgba(24, 6, 20, 0.84)) padding-box,
+      linear-gradient(180deg, rgba(49, 12, 44, 0.9), rgba(24, 6, 20, 0.84)) padding-box,
       linear-gradient(
         135deg,
         rgba(255, 255, 255, 0.88),
-        rgba(236, 72, 153, 0.58),
-        rgba(216, 180, 254, 0.44),
-        rgba(168, 85, 247, 0.24),
+        rgba(236, 72, 153, 0.68),
+        rgba(216, 180, 254, 0.54),
+        rgba(192, 132, 252, 0.32),
         rgba(255, 255, 255, 0.42),
-        rgba(251, 113, 133, 0.14)
+        rgba(244, 114, 182, 0.18)
       ) border-box;
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.18),
@@ -69,8 +69,8 @@ body {
     border: 1px solid transparent;
     border-radius: 1.5rem;
     background:
-      linear-gradient(180deg, rgba(53, 16, 45, 0.94), rgba(31, 10, 27, 0.9)) padding-box,
-      linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(236, 72, 153, 0.3), rgba(216, 180, 254, 0.18)) border-box;
+      linear-gradient(180deg, rgba(57, 18, 51, 0.94), rgba(31, 10, 27, 0.9)) padding-box,
+      linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(236, 72, 153, 0.4), rgba(216, 180, 254, 0.24)) border-box;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
       0 14px 30px rgba(0, 0, 0, 0.12);
@@ -87,7 +87,7 @@ body {
   }
 
   .crystal-input:focus {
-    border-color: rgba(236, 72, 153, 0.64);
+    border-color: rgba(236, 72, 153, 0.72);
     box-shadow:
       0 0 0 4px rgba(236, 72, 153, 0.14),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -97,8 +97,8 @@ body {
   .crystal-option {
     border: 1px solid transparent;
     background:
-      linear-gradient(180deg, rgba(59, 16, 50, 0.95), rgba(29, 8, 25, 0.93)) padding-box,
-      linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(236, 72, 153, 0.44), rgba(216, 180, 254, 0.28)) border-box;
+      linear-gradient(180deg, rgba(64, 18, 55, 0.95), rgba(29, 8, 25, 0.93)) padding-box,
+      linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(236, 72, 153, 0.5), rgba(216, 180, 254, 0.3)) border-box;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
       0 10px 24px rgba(0, 0, 0, 0.12);
@@ -108,10 +108,10 @@ body {
   .crystal-option-active {
     border: 1px solid transparent;
     background:
-      linear-gradient(180deg, rgba(108, 29, 88, 0.98), rgba(41, 10, 34, 0.95)) padding-box,
-      linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 72, 153, 0.8), rgba(216, 180, 254, 0.6), rgba(168, 85, 247, 0.28)) border-box;
+      linear-gradient(180deg, rgba(132, 40, 110, 0.98), rgba(41, 10, 34, 0.95)) padding-box,
+      linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 72, 153, 0.88), rgba(216, 180, 254, 0.7), rgba(192, 132, 252, 0.36)) border-box;
     box-shadow:
-      0 14px 28px rgba(236, 72, 153, 0.18),
+      0 14px 28px rgba(236, 72, 153, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
@@ -119,13 +119,13 @@ body {
     border: 1px solid transparent;
     background:
       linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08)) padding-box,
-      linear-gradient(135deg, rgba(255, 252, 240, 0.98), rgba(255, 236, 166, 0.96), rgba(253, 224, 71, 0.9), rgba(255, 214, 102, 0.72)) border-box;
+      linear-gradient(135deg, rgba(255, 247, 250, 0.98), rgba(255, 216, 232, 0.96), rgba(244, 114, 182, 0.92), rgba(236, 72, 153, 0.82)) border-box;
     box-shadow:
-      0 14px 30px rgba(253, 224, 71, 0.22),
+      0 14px 30px rgba(236, 72, 153, 0.26),
       inset 0 1px 0 rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(12px);
-    color: #3f2b00;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+    color: #fff9fd;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.26);
   }
 
   .crystal-action-secondary {
@@ -142,20 +142,20 @@ body {
   .gold-action-secondary {
     border: 1px solid transparent;
     background:
-      linear-gradient(135deg, rgba(255, 252, 240, 0.92), rgba(255, 236, 166, 0.82), rgba(253, 224, 71, 0.62), rgba(255, 214, 102, 0.5)) padding-box,
-      linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 214, 102, 0.48), rgba(253, 224, 71, 0.34)) border-box;
+      linear-gradient(135deg, rgba(255, 247, 250, 0.94), rgba(255, 216, 232, 0.86), rgba(244, 114, 182, 0.72), rgba(236, 72, 153, 0.54)) padding-box,
+      linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(244, 114, 182, 0.52), rgba(236, 72, 153, 0.38)) border-box;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 10px 24px rgba(255, 214, 102, 0.18);
+      0 10px 24px rgba(236, 72, 153, 0.2);
     backdrop-filter: blur(10px);
-    color: #4c3300;
+    color: #fff9fd;
   }
 
   .crystal-dashed {
     border: 1px dashed transparent;
     background:
       linear-gradient(180deg, rgba(37, 10, 31, 0.9), rgba(22, 6, 19, 0.84)) padding-box,
-      linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(236, 72, 153, 0.42), rgba(216, 180, 254, 0.3)) border-box;
+      linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(236, 72, 153, 0.48), rgba(216, 180, 254, 0.34)) border-box;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
       0 14px 30px rgba(0, 0, 0, 0.1);
@@ -165,7 +165,7 @@ body {
     border: 1px solid transparent;
     background:
       linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08)) padding-box,
-      linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(236, 72, 153, 0.56), rgba(216, 180, 254, 0.36)) border-box;
+      linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(236, 72, 153, 0.66), rgba(216, 180, 254, 0.44)) border-box;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(10px);
   }
